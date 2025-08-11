@@ -46,3 +46,20 @@ staticfiles/
 # Environment variables
 .env
 *.env
+
+# Python virtual environment
+venv/
+ENV/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite (in case it’s used temporarily)
+db.sqlite3
+
+# VS Code settings
+.vscode/
+
