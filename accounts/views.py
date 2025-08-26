@@ -20,7 +20,8 @@ from .serializers import (
 from .utils import generate_otp, send_email_via_useplunk
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from drf_yasg import openapi
 
 logger = logging.getLogger(__name__)
@@ -234,24 +235,28 @@ class LogoutView(APIView):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                'refresh': openapi.Schema(type=openapi.TYPE_STRING, description='Your refresh token')
+                'refresh': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    description='Your refresh token'
+                )
             },
             required=['refresh']
         ),
         responses={200: 'Logged out successfully', 400: 'Bad request'}
     )
     def post(self, request):
-        user = request.user  
+        user = request.user
         refresh_token = request.data.get("refresh")
-        
+
         if not refresh_token:
             return Response({"error": "Refresh token is required."}, status=400)
+
         try:
             token = RefreshToken(refresh_token)
             token.blacklist()
-            
-            return Response({"message": f"Successfully logged out {user.email}."}, status=200)
+            return Response(
+                {"message": f"Successfully logged out {user.email}."},
+                status=200
+            )
         except TokenError:
             return Response({"error": "Invalid or expired token."}, status=400)
-        
-
