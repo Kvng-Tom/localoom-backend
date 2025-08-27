@@ -169,7 +169,6 @@ AUTH_USER_MODEL = 'accounts.User'
 
 SITE_ID = int(os.environ.get("SITE_ID", 2)) 
 
-SITE_ID = 3
 
 AUTHENTICATION_BACKENDS = [
    "django.contrib.auth.backends.ModelBackend",
