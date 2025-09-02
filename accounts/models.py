@@ -45,7 +45,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.full_name
 
 
-
 class OTP(models.Model):
     PURPOSE_CHOICES = (
         ('signup', 'Signup Verification'),
@@ -57,7 +56,7 @@ class OTP(models.Model):
     purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES)
     expiry_date = models.DateTimeField()
 
-    created_at = models.DateTimeField(auto_now_add=True )
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def is_valid_now(self):
         return timezone.now() <= self.expiry_date
