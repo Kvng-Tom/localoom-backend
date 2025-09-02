@@ -19,9 +19,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         max_length=20,
         choices=Roles.choices,
         default=Roles.BUYER,
-        editable=False
+        
     )
-
+    
+    story = models.TextField(blank=True, null=True)
+    craft_type = models.CharField(max_length=100, blank=True, null=True)
+    location = models.CharField(max_length=255, blank=True, null=True)
+    verified = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
@@ -53,7 +57,7 @@ class OTP(models.Model):
     purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES)
     expiry_date = models.DateTimeField()
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True )
 
     def is_valid_now(self):
         return timezone.now() <= self.expiry_date
@@ -63,3 +67,4 @@ class OTP(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.purpose} - {self.otp}"
+    

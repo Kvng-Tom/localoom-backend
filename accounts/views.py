@@ -9,7 +9,7 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import User, OTP
 from .serializers import (
-    RegisterSerializer, 
+    UserRegistrationSerializer, 
     LoginSerializer, 
     ProfileSerializer, 
     ForgotPasswordSerializer, 
@@ -30,14 +30,14 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 
 
 
-class RegisterView(APIView):
-    @swagger_auto_schema(request_body=RegisterSerializer)
+class UserRegistrationView(APIView):
+    @swagger_auto_schema(request_body=UserRegistrationSerializer)
     def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()  # OTP will be sent via signal
-        return Response({"message": "User registered successfully. OTP sent to email."}, status=status.HTTP_201_CREATED)
-
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Registration successful!'}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
     @swagger_auto_schema(request_body=LoginSerializer)
@@ -67,12 +67,20 @@ class LoginView(APIView):
 
 class ProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    authentication_classes= [JWTAuthentication]
+    authentication_classes = [JWTAuthentication]
 
     def get(self, request):
         serializer = ProfileSerializer(request.user)
         return Response(serializer.data)
 
+    @swagger_auto_schema(request_body=ProfileSerializer)
+    def put(self, request):
+        serializer = ProfileSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 class ForgotPasswordView(APIView):
     @swagger_auto_schema(request_body=ForgotPasswordSerializer)
     def post(self, request):
