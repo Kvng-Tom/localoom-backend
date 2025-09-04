@@ -1,223 +1,114 @@
-# localoom-backend
+LocalLoom – Accounts Service
 
-1. Register User
+LocalLoom is a backend platform for local business listings and community commerce.
+This service handles user authentication and account management, supporting both buyers and artisans.
 
-URL: /register/
+Features
+User registration (Buyer & Artisan roles)
+Email verification with OTP
+Secure JWT authentication
+Forgot/Reset password flow with OTP
+Resend OTP (for signup & password reset)
+Profile management (view & update)
+Logout (token invalidation)
+Full API documentation in Swagger UI
 
-Method: POST
+Tech Stack
+Backend: Django REST Framework
+Authentication: JWT (JSON Web Tokens)
+Database: SQLite (dev) / PostgreSQL (prod)
+Email: SendGrid for OTP delivery
+Docs: Swagger UI
 
-Auth: None
-
-Description: Register a new user and send signup OTP.
-
-Request Body:
-
+API Endpoints
+1. User Registration
+POST /api/accounts/register/
+Buyer Example
 {
-  "email": "user@example.com",
-  "full_name": "John Doe",
-  "password": "password123"
+  "email": "buyer1@example.com",
+  "full_name": "Jane Doe",
+  "password": "StrongPass123!",
+  "role": "BUYER"
 }
 
-
-Response (201):
-
+Artisan Example
 {
-  "message": "User registered successfully. OTP sent to email."
+  "email": "artisan1@example.com",
+  "full_name": "Titi Basketweaver",
+  "password": "StrongPass123!",
+  "role": "ARTISAN",
+  "story": "I weave baskets using traditional methods passed down in my village.",
+  "craft_type": "Basket Weaving",
+  "location": "Lagos, Nigeria"
 }
+✅ 201 Created + OTP email sent
 
-
-Notes: Account inactive until OTP verification.
-
-2. Verify OTP (Signup)
-
-URL: /verify-otp/
-
-Method: POST
-
-Auth: None
-
-Description: Verify OTP for account activation.
-
-Request Body:
-
+2. Email Verification (OTP)
+POST /api/accounts/verify-otp/
 {
-  "email": "user@example.com",
+  "email": "artisan1@example.com",
   "otp": "123456"
 }
+✅ Activates user if OTP is valid
 
-
-Response (200):
-
+3. Login
+POST /api/accounts/login/
 {
-  "message": "Account verified and activated."
+  "email": "artisan1@example.com",
+  "password": "StrongPass123!"
+}
+✅ Returns JWT tokens
+
+4. Forgot Password
+POST /api/accounts/forgot-password/
+{
+  "email": "artisan1@example.com"
+}
+✅ Sends OTP for reset
+
+5. Reset Password
+POST /api/accounts/reset-password/
+{
+  "otp": "654321",
+  "password": "NewStrongPass456!"
+}
+✅ Updates password
+
+6. Resend OTP
+Signup OTP: POST /api/accounts/resend-signup-otp/
+Forgot Password OTP: POST /api/accounts/resend-forgot-password-otp/
+{
+  "email": "artisan1@example.com"
 }
 
-3. Resend Signup OTP
-
-URL: /resend-signup-otp/
-
-Method: POST
-
-Auth: None
-
-Description: Resend OTP for account verification.
-
-Request Body:
-
+7. View Profile
+GET /api/accounts/profile/ (JWT required)
 {
-  "email": "user@example.com"
+  "email": "artisan1@example.com",
+  "full_name": "Titi Basketweaver",
+  "date_joined": "2025-09-01T12:34:56Z",
+  "role": "ARTISAN",
+  "story": "I weave baskets using traditional methods...",
+  "craft_type": "Basket Weaving",
+  "location": "Oyo, Nigeria",
+  "verified": true
 }
 
-
-Response (200):
-
+8. Update Profile
+PUT /api/accounts/profile/ (JWT required)
 {
-  "message": "New signup OTP sent successfully."
+  "full_name": "Titi B. Weaver",
+  "story": "Updated story about my craft.",
+  "craft_type": "Basket Weaving",
+  "location": "Ibadan, Nigeria"
 }
-
-4. Login
-
-URL: /login/
-
-Method: POST
-
-Auth: None
-
-Description: Login with email & password.
-
-Request Body:
-
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-
-
-Response (200):
-
-{
-  "message": "Login successful"
-}
-
-
-Response (403 if not verified):
-
-{
-  "error": "Account not verified. Please verify via OTP."
-}
-
-5. Forgot Password
-
-URL: /forgot-password/
-
-Method: POST
-
-Auth: None
-
-Description: Request OTP to reset password.
-
-Request Body:
-
-{
-  "email": "user@example.com"
-}
-
-
-Response (200):
-
-{
-  "message": "OTP sent to your email."
-}
-
-6. Resend Forgot Password OTP
-
-URL: /resend-forgot-password-otp/
-
-Method: POST
-
-Auth: None
-
-Description: Resend OTP for password reset.
-
-Request Body:
-
-{
-  "email": "user@example.com"
-}
-
-
-Response (200):
-
-{
-  "message": "New forgot-password OTP sent successfully."
-}
-
-7. Reset Password
-
-URL: /reset-password/
-
-Method: POST
-
-Auth: None
-
-Description: Reset password using OTP.
-
-Request Body:
-
-{
-  "otp": "123456",
-  "password": "newpassword123"
-}
-
-
-Response (200):
-
-{
-  "message": "Password reset successful."
-}
-
-8. Profile
-
-URL: /profile/
-
-Method: GET
-
-Auth: JWT Required
-
-Description: Get authenticated user's profile.
-
-Response (200):
-
-{
-  "email": "user@example.com",
-  "full_name": "John Doe",
-  "role": "BUYER",
-  "date_joined": "2025-08-14T08:00:00Z"
-}
+✅ Updates profile
 
 9. Logout
+POST /api/accounts/logout/ (JWT required)
+✅ Invalidates token
 
-URL: /logout/
-
-Method: POST
-
-Auth: JWT Required
-
-Description: Blacklist refresh token to logout user.
-
-Request Body:
-
-{
-  "refresh": "<refresh_token_here>"
-}
-
-
-Response (200):
-
-{
-  "message": "Successfully logged out user@example.com."
-}
-
-
-k82hkf 1k
-
+Notes
+All APIs available in Swagger UI at /swagger/
+Use valid emails for OTP-related features
+Handle errors: invalid data, expired OTP, unauthorized access
