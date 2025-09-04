@@ -167,7 +167,7 @@ REST_FRAMEWORK = {
 
 AUTH_USER_MODEL = 'accounts.User'
 
-SITE_ID = int(os.environ.get("SITE_ID", 2)) 
+SITE_ID = int(os.environ.get("SITE_ID", 1)) 
 
 
 AUTHENTICATION_BACKENDS = [
