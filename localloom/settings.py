@@ -200,9 +200,14 @@ SWAGGER_SETTINGS = {
     },  
 }
 
+import os
+
+LOG_DIR = BASE_DIR / "logs"
+LOG_DIR.mkdir(exist_ok=True)  
+
 LOGGING = {
     "version": 1,
-    "disable_existing_loggers": False,  # keep Django’s own logs
+    "disable_existing_loggers": False,  
     "formatters": {
         "verbose": {
             "format": "{asctime} {levelname} {name} {message}",
@@ -218,9 +223,11 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "simple",
         },
-        "file": {  # for production logs
-            "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "otp_events.log",
+        "file": {  # production OTP logs
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOG_DIR / "otp_events.log",
+            "maxBytes": 10_485_760,  # 10 MB
+            "backupCount": 5,
             "formatter": "verbose",
         },
     },

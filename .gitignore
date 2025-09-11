@@ -64,4 +64,4 @@ db.sqlite3
 # VS Code settings
 .vscode/
 
-otp_events.log
+logs/
