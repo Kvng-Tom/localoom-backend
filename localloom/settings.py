@@ -169,9 +169,12 @@ AUTH_USER_MODEL = 'accounts.User'
 
 SITE_ID = int(os.environ.get("SITE_ID", 1)) 
 
+TERMII_API_KEY = os.getenv("TERMIi_API_KEY")
+TERMII_BASE_URL = os.getenv("TERMIi_BASE_URL")
 
 AUTHENTICATION_BACKENDS = [
-   "django.contrib.auth.backends.ModelBackend",
+    "localloom.backends.CustomAuthBackend",
+    "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend", 
 ]
 
@@ -195,4 +198,42 @@ SWAGGER_SETTINGS = {
 
         }
     },  
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,  # keep Django’s own logs
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} {levelname} {name} {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {  # for local debugging
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+        "file": {  # for production logs
+            "class": "logging.FileHandler",
+            "filename": BASE_DIR / "logs" / "otp_events.log",
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "django": {  # keep Django logs
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "accounts": {  # your app logs
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
 }
