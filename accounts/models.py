@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.conf import settings
 
 from .managers import UserManager
-from .utils import normalize_phone_number  # clean import, no circular ref
+from .utils import normalize_phone_number  
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -65,9 +65,9 @@ class OTP(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES)
     expiry_date = models.DateTimeField()
-    failed_attempts = models.PositiveIntegerField(default=0)  # ❌ Wrong OTP tries
-    resend_count = models.PositiveIntegerField(default=0)     # 🔁 Resends
-    blocked_until = models.DateTimeField(null=True, blank=True)  # ⏳ Cooldown
+    failed_attempts = models.PositiveIntegerField(default=0)  
+    resend_count = models.PositiveIntegerField(default=0)     
+    blocked_until = models.DateTimeField(null=True, blank=True)  
     created_at = models.DateTimeField(auto_now_add=True)
 
     def is_valid_now(self):
