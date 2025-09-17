@@ -1,114 +1,150 @@
-LocalLoom – Accounts Service
+LocalLoom Accounts Module
 
-LocalLoom is a backend platform for local business listings and community commerce.
-This service handles user authentication and account management, supporting both buyers and artisans.
+This module handles user registration, authentication, and OTP-based verification for the LocalLoom platform. It supports both buyers and artisans, with email and phone number as contact methods.
 
 Features
-User registration (Buyer & Artisan roles)
-Email verification with OTP
-Secure JWT authentication
-Forgot/Reset password flow with OTP
-Resend OTP (for signup & password reset)
-Profile management (view & update)
-Logout (token invalidation)
-Full API documentation in Swagger UI
 
-Tech Stack
-Backend: Django REST Framework
-Authentication: JWT (JSON Web Tokens)
-Database: SQLite (dev) / PostgreSQL (prod)
-Email: SendGrid for OTP delivery
-Docs: Swagger UI
+Custom User Model
 
-API Endpoints
-1. User Registration
-POST /api/accounts/register/
-Buyer Example
-{
-  "email": "buyer1@example.com",
-  "full_name": "Jane Doe",
-  "password": "StrongPass123!",
-  "role": "BUYER"
-}
+Fields: full_name, email, phone_number, role, story, craft_type, location, verified, is_active, is_staff, is_superuser.
 
-Artisan Example
-{
-  "email": "artisan1@example.com",
-  "full_name": "Titi Basketweaver",
-  "password": "StrongPass123!",
-  "role": "ARTISAN",
-  "story": "I weave baskets using traditional methods passed down in my village.",
-  "craft_type": "Basket Weaving",
-  "location": "Lagos, Nigeria"
-}
-✅ 201 Created + OTP email sent
+Roles: BUYER, ARTISAN, ADMIN.
 
-2. Email Verification (OTP)
-POST /api/accounts/verify-otp/
-{
-  "email": "artisan1@example.com",
-  "otp": "123456"
-}
-✅ Activates user if OTP is valid
+Email is mandatory for buyers; artisans can register with either email or phone number.
 
-3. Login
-POST /api/accounts/login/
-{
-  "email": "artisan1@example.com",
-  "password": "StrongPass123!"
-}
-✅ Returns JWT tokens
+Phone numbers are normalized to +234XXXXXXXXXX format.
 
-4. Forgot Password
-POST /api/accounts/forgot-password/
-{
-  "email": "artisan1@example.com"
-}
-✅ Sends OTP for reset
+Custom User Manager
 
-5. Reset Password
-POST /api/accounts/reset-password/
-{
-  "otp": "654321",
-  "password": "NewStrongPass456!"
-}
-✅ Updates password
+Handles user creation (create_user) and superuser creation (create_superuser).
 
-6. Resend OTP
-Signup OTP: POST /api/accounts/resend-signup-otp/
-Forgot Password OTP: POST /api/accounts/resend-forgot-password-otp/
-{
-  "email": "artisan1@example.com"
-}
+Superusers must have an email; phone number is optional only for artisans.
 
-7. View Profile
-GET /api/accounts/profile/ (JWT required)
-{
-  "email": "artisan1@example.com",
-  "full_name": "Titi Basketweaver",
-  "date_joined": "2025-09-01T12:34:56Z",
-  "role": "ARTISAN",
-  "story": "I weave baskets using traditional methods...",
-  "craft_type": "Basket Weaving",
-  "location": "Oyo, Nigeria",
-  "verified": true
-}
+OTP System
 
-8. Update Profile
-PUT /api/accounts/profile/ (JWT required)
-{
-  "full_name": "Titi B. Weaver",
-  "story": "Updated story about my craft.",
-  "craft_type": "Basket Weaving",
-  "location": "Ibadan, Nigeria"
-}
-✅ Updates profile
+OTPs are used for signup verification and password reset.
 
-9. Logout
-POST /api/accounts/logout/ (JWT required)
-✅ Invalidates token
+Each OTP has an expiry time and is unique per user per purpose.
 
-Notes
-All APIs available in Swagger UI at /swagger/
-Use valid emails for OTP-related features
-Handle errors: invalid data, expired OTP, unauthorized access
+OTP delivery:
+
+Buyers → email only
+
+Artisans → email preferred if available, otherwise SMS
+
+OTP Delivery Services
+
+Email: UsePlunk API
+
+SMS: Termii API
+
+Both have logging for production use.
+
+Account Activation & Verification
+
+Users are created with is_active=False.
+
+After OTP verification, is_active is set to True.
+
+Optional: implement a lockout if OTP fails multiple times.
+
+Password Reset
+
+OTP-based password reset for both email and phone number.
+
+OTPs are single-use and expire after a set period.
+
+Logging
+
+Production-friendly logging setup via Django logging config.
+
+OTP sending, email/SMS success, and failures are logged.
+
+Serializers & Validation
+
+UserRegistrationSerializer: handles user input validation and ensures buyers always use email.
+
+OTPVerifySerializer and ResetPasswordSerializer for OTP flows.
+
+API Views
+
+UserRegistrationView: registers new users.
+
+OTPVerifyView: verifies signup OTP.
+
+ResendSignupOTPView: resend signup OTP (prevents multiple duplicates).
+
+ResendForgotPasswordOTPView: resend forgot password OTP.
+
+ResetPasswordView: reset user password using OTP.
+
+Database Constraints
+
+Unique constraint for OTP per user per purpose.
+
+Proper validation for phone numbers to prevent invalid data.
+
+Installation
+
+Add accounts app to INSTALLED_APPS:
+
+INSTALLED_APPS = [
+    ...,
+    'accounts',
+]
+
+
+Set the custom user model in settings.py:
+
+AUTH_USER_MODEL = "accounts.User"
+
+
+Set API keys for OTP delivery:
+
+TERMII_API_KEY = "your_termii_api_key"
+USEPLUNK_API_KEY = os.getenv("USEPLUNK_API_KEY")
+
+
+Run migrations:
+
+python manage.py makemigrations accounts
+python manage.py migrate
+
+Usage
+Registration
+
+Buyers must provide email.
+
+Artisans can register with either email or phone number.
+
+OTP is automatically sent via the preferred method.
+
+OTP Verification
+
+Users submit OTP along with identifier (email if provided, else phone number).
+
+After successful verification, is_active is set to True.
+
+Password Reset
+
+User requests OTP via email/phone.
+
+Submit OTP along with new password to reset.
+
+Logging
+
+All OTP send events (email and SMS) are logged to production-safe logging handlers.
+
+Errors and warnings are captured to prevent silent failures.
+
+Notes / Recommendations
+
+Use email as the primary contact if available, phone number as fallback.
+
+Avoid storing multiple OTPs simultaneously to prevent MultipleObjectsReturned.
+
+Implement rate-limiting or lockout for multiple OTP failures.
+
+Make logging configurable per environment to avoid verbose logs in production.
+
+Ensure database has proper constraints to prevent duplicate users.
