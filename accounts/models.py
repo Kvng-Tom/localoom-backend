@@ -24,14 +24,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=Roles.BUYER,
     )
 
-    story = models.TextField(blank=True, null=True)
-    craft_type = models.CharField(max_length=100, blank=True, null=True)
-    location = models.CharField(max_length=255, blank=True, null=True)
-    verified = models.BooleanField(default=False)
+    # Core user flags
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=False)
-
+    is_active = models.BooleanField(default=True)  # usually True after signup verification
     date_joined = models.DateTimeField(default=timezone.now)
 
     USERNAME_FIELD = "email"
@@ -55,6 +51,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def display_name(self):
         return self.full_name
 
+
 class OTP(models.Model):
     PURPOSE_CHOICES = (
         ("signup", "Signup Verification"),
@@ -65,9 +62,9 @@ class OTP(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES)
     expiry_date = models.DateTimeField()
-    failed_attempts = models.PositiveIntegerField(default=0)  
-    resend_count = models.PositiveIntegerField(default=0)     
-    blocked_until = models.DateTimeField(null=True, blank=True)  
+    failed_attempts = models.PositiveIntegerField(default=0)
+    resend_count = models.PositiveIntegerField(default=0)
+    blocked_until = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def is_valid_now(self):

@@ -111,12 +111,11 @@ class ForgotPasswordView(APIView):
     def post(self, request):
         serializer = ForgotPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data['email']
+        identifier = serializer.validated_data['identifier']
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return Response({"error": "User with this email does not exist."}, status=404)
+        user = get_user_by_identifier(identifier)
+        if not user:
+            return Response({"error": "User not found."}, status=404)
 
         # Delete old forgot-password OTPs
         OTP.objects.filter(user=user, purpose="forgot-password").delete()
@@ -129,16 +128,18 @@ class ForgotPasswordView(APIView):
             expiry_date=timezone.now() + timedelta(minutes=10)
         )
 
-        send_email_via_useplunk(
-            to_email=user.email,
-            event="forgot-password",
-            data={
-                "full_name": user.full_name,
-                "otp": str(otp_code)
-            }
-        )
+        results = send_user_otp(user, otp_code, purpose="forgot-password")
 
-        return Response({"message": "OTP sent to your email."}, status=status.HTTP_200_OK)
+        if results.get("email") or results.get("sms"):
+            return Response(
+                {"message": f"OTP sent via {'email' if results.get('email') else 'phone'}."},
+                status=200
+            )
+        else:
+            return Response(
+                {"error": "Failed to send OTP. Please try again later."},
+                status=500
+            )
 
 class ResetPasswordView(APIView):
     @swagger_auto_schema(request_body=ResetPasswordSerializer)

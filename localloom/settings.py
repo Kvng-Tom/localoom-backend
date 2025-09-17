@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.sites',
+    # 'django.contrib.sites',
 
     # Allauth (for social logins)
     'allauth',
@@ -61,6 +61,7 @@ INSTALLED_APPS = [
 
     #my apps
     'accounts',
+    'store',
 ]
 
 MIDDLEWARE = [
@@ -98,16 +99,35 @@ WSGI_APPLICATION = 'localloom.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB'),
-        'USER': os.environ.get('POSTGRES_USER'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
-        'HOST': os.environ.get('POSTGRES_HOST', 'db'),
-        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+import os
+
+ENVIRONMENT = os.environ.get("ENVIRONMENT", "local")
+
+if ENVIRONMENT == "local":
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('POSTGRES_DB'),
+            'USER': os.environ.get('POSTGRES_USER'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
+            'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
+            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        }
     }
-}
+elif ENVIRONMENT == "production":
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('NEON_DB'),
+            'USER': os.environ.get('NEON_USER'),
+            'PASSWORD': os.environ.get('NEON_PASSWORD'),
+            'HOST': os.environ.get('NEON_HOST'),
+            'PORT': os.environ.get('NEON_PORT', '5432'),
+            'OPTIONS': {
+                'sslmode': os.environ.get('NEON_SSL', 'require'),
+            },
+        }
+    }
 
 
 # Password validation
@@ -167,13 +187,13 @@ REST_FRAMEWORK = {
 
 AUTH_USER_MODEL = 'accounts.User'
 
-SITE_ID = int(os.environ.get("SITE_ID", 1)) 
+# SITE_ID = int(os.environ.get("SITE_ID", 1)) 
 
 TERMII_API_KEY = os.getenv("TERMIi_API_KEY")
 TERMII_BASE_URL = os.getenv("TERMIi_BASE_URL")
 
 AUTHENTICATION_BACKENDS = [
-    "localloom.backends.CustomAuthBackend",
+    "accounts.backends.CustomAuthBackend",
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend", 
 ]

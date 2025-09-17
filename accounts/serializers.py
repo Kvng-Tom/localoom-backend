@@ -55,20 +55,31 @@ class LoginSerializer(serializers.Serializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-     class Meta:
+    class Meta:
         model = User
         fields = [
-            'email', 'full_name', 'date_joined', 'role',
-            'story', 'craft_type', 'location', 'verified'
+            "email",
+            "phone_number",
+            "full_name",
+            "role",
+            "is_active",
+            "date_joined",
         ]
+        read_only_fields = ["is_active", "date_joined"]
 
 class ForgotPasswordSerializer(serializers.Serializer):
-    identifier = serializers.EmailField()
+    identifier = serializers.CharField()
 
 
 class ResetPasswordSerializer(serializers.Serializer):
     otp = serializers.CharField()
     password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        if data["password"] != data["confirm_password"]:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+        return data
 
 
 class OTPVerifySerializer(serializers.Serializer):
