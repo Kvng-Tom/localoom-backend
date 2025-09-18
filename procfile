@@ -1,2 +1,2 @@
 release: python manage.py migrate --noinput
-web: gunicorn localoom_backend.wsgi
+web: gunicorn localloom_backend.wsgi
