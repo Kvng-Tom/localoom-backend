@@ -1,45 +1,73 @@
-from rest_framework import generics, permissions
-from .models import ArtisanStorefront, Product   
-from .serializers import StorefrontSerializer, ProductSerializer
-from .permissions import IsArtisan
+from rest_framework import generics, permissions, status
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .models import ArtisanProfile, Product, BuyerProfile
+from .serializers import (
+    ArtisanProfileSerializer,
+    ProductSerializer,
+    BuyerProfileSerializer,
+    StorefrontSerializer,
+)
 
-# --- Buyers can view artisans ---
+# --- Buyer Profile Views ---
+class BuyerProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = BuyerProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user.buyer_profile
+
+# --- Artisan Profile Views ---
+class ArtisanProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = ArtisanProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user.artisan_profile
+
+# --- Storefront Views ---
 class StorefrontListView(generics.ListAPIView):
-    queryset = ArtisanStorefront.objects.filter(verified=True)   
+    queryset = ArtisanProfile.objects.filter(verified=True)
     serializer_class = StorefrontSerializer
     permission_classes = [permissions.AllowAny]
 
 class StorefrontDetailView(generics.RetrieveAPIView):
-    queryset = ArtisanStorefront.objects.filter(verified=True)   
+    queryset = ArtisanProfile.objects.filter(verified=True)
     serializer_class = StorefrontSerializer
     permission_classes = [permissions.AllowAny]
+    lookup_field = "slug"
 
-# --- Artisans manage their own storefront ---
 class MyStorefrontView(generics.RetrieveUpdateAPIView):
-    serializer_class = StorefrontSerializer
-    permission_classes = [IsArtisan]
+    serializer_class = ArtisanProfileSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        return self.request.user.storefront
+        user = self.request.user
+        profile, _ = ArtisanProfile.objects.get_or_create(
+            user=user,
+            defaults={"full_name": user.full_name or user.email or user.phone_number}
+        )
+        return profile
 
-# --- Artisans manage products ---
+# --- Product Views ---
 class ProductCreateView(generics.CreateAPIView):
     serializer_class = ProductSerializer
-    permission_classes = [IsArtisan]
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         user = self.request.user
-
-        # This ensures the artisan has a storefront
-        if not hasattr(user, "storefront"):
-            from .models import ArtisanStorefront
-            ArtisanStorefront.objects.create(user=user, display_name=user.full_name)
-            
-        serializer.save(storefront=user.storefront)
+        if not hasattr(user, "artisan_profile"):
+            ArtisanProfile.objects.create(
+                user=user,
+                full_name=user.full_name,
+            )
+        serializer.save(storefront=user.artisan_profile)
 
 class ProductUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsArtisan]
+    permission_classes = [IsAuthenticated]
+    lookup_field = "pk"
 
-    def get_queryset(self):
-        return Product.objects.filter(storefront=self.request.user.storefront)
+
