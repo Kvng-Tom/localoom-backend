@@ -95,3 +95,19 @@ class BuyerProfile(models.Model):
 
     def __str__(self):
         return self.full_name or self.user.email or str(self.user)
+
+class Order(models.Model):
+    buyer = models.ForeignKey(BuyerProfile, on_delete=models.CASCADE, related_name="orders")
+    artisan = models.ForeignKey(ArtisanProfile, on_delete=models.CASCADE, related_name="orders")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="orders")
+    quantity = models.PositiveIntegerField(default=1)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=30, choices=[
+        ("pending", "Pending"),
+        ("confirmed", "Confirmed"),
+        ("shipped", "Shipped"),
+        ("delivered", "Delivered"),
+        ("cancelled", "Cancelled"),
+    ], default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
