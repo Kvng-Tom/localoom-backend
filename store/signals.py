@@ -17,7 +17,7 @@ def manage_user_profiles(sender, instance, created, **kwargs):
             ArtisanProfile.objects.get_or_create(
                 user=instance,
                 defaults={
-                    "display_name": instance.full_name
+                    "full_name": instance.full_name
                     or instance.email
                     or instance.phone_number
                 },
@@ -36,9 +36,9 @@ def manage_user_profiles(sender, instance, created, **kwargs):
         # Sync artisan profile name
         if instance.role == "ARTISAN" and hasattr(instance, "artisan_profile"):
             profile = instance.artisan_profile
-            if profile.display_name != instance.full_name:
-                profile.display_name = instance.full_name
-                profile.save(update_fields=["display_name"])
+            if profile.full_name != instance.full_name:
+                profile.full_name = instance.full_name
+                profile.save(update_fields=["full_name"])
 
         # Sync buyer profile name
         elif instance.role == "BUYER" and hasattr(instance, "buyer_profile"):

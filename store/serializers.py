@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ArtisanProfile, Product, BuyerProfile
+from .models import ArtisanProfile, Order, Product, BuyerProfile
 
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,3 +37,8 @@ class ArtisanProfileSerializer(serializers.ModelSerializer):
             "id", "full_name", "phone_number", "country", "state", "craft_type", "about_you", "profile_picture", "verified", "slug", "created_at", "updated_at"
         ]
         read_only_fields = ["id", "verified", "slug", "created_at", "updated_at"]
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at"]
