@@ -33,7 +33,7 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ['localoom-backend.onrender.com',
                  '127.0.0.1',
                  'localhost',
-                 'https://localoom-backend-dev.onrender.com'
+                 'localoom-backend-dev.onrender.com',
         ]
 
 
@@ -66,9 +66,13 @@ INSTALLED_APPS = [
     #my apps
     'accounts',
     'store',
+
+    #third party
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -78,6 +82,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+]
+
+CORS_ALLOW_ORIGINS = [
+    "http://localhost:3000",
 ]
 
 ROOT_URLCONF = 'localloom.urls'
