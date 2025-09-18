@@ -23,7 +23,7 @@ urlpatterns = [
     path("artisan/products/create/", ProductCreateView.as_view(), name="artisan-product-create"),
     
     path("artisan/products/<int:pk>/", ProductUpdateDeleteView.as_view(), name="artisan-product-update-delete"),
-    # List products for a specific artisan
+    # List products for a specific artisa
     
     path("artisan/products/", MyProductsListView.as_view(), name="artisan-product-list"),
     # --- Buyer endpoints ---
