@@ -86,7 +86,13 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:3001",
 ]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^http://localhost:\d+$",
+]
+
 
 ROOT_URLCONF = 'localloom.urls'
 
