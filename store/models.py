@@ -40,7 +40,7 @@ class ArtisanProfile(models.Model):
     verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(unique=False, blank=True)
 
     class Meta:
         verbose_name = "Artisan Profile"
