@@ -40,7 +40,7 @@ class ArtisanProfile(models.Model):
     verified = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(unique=False, blank=True)
 
     class Meta:
         verbose_name = "Artisan Profile"
@@ -56,7 +56,7 @@ class Product(models.Model):
         on_delete=models.CASCADE,
         related_name="products"
     )
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=250)
     description = models.TextField()
     price =  models.DecimalField(max_digits=10, decimal_places=2)
     stock_quantity = models.PositiveIntegerField(default=0)
