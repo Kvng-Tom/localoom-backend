@@ -1,5 +1,7 @@
 from rest_framework import generics, permissions
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
 from .models import ArtisanProfile, Product, BuyerProfile, Order
 from .serializers import (
     ArtisanProfileSerializer,
@@ -70,17 +72,49 @@ class ProductUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "pk"
 
 # --- List Products for a specific Artisan ---
-class MyProductsListView(generics.ListAPIView):
+
+class ProductPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "limit"
+    max_page_size = 100
+
+class ProductSearchListView(generics.ListAPIView):
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
+    pagination_class = ProductPagination
 
     def get_queryset(self):
-       user = self.request.user
-       if hasattr(user, "artisan_profile"):
-           return Product.objects.filter(storefront=user.artisan_profile)
+        queryset = Product.objects.filter(is_active=True)
+        search = self.request.query_params.get('search')
+        category = self.request.query_params.get('category')
+        if search:
+            queryset = queryset.filter(name__icontains=search)
+        if category:
+            queryset = queryset.filter(category__iexact=category)
+        return queryset
 
-       return Product.objects.none()
-
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+        return Response({
+            "products": [
+                {
+                    "id": prod["id"],
+                    "name": prod["name"],
+                    "price": prod["price"],
+                    "image": prod["images"][0] if prod["images"] else None,
+                    "category": prod["category"],
+                }
+                for prod in serializer.data
+            ],
+            "pagination": {
+                "page": int(request.query_params.get("page", 1)),
+                "limit": int(request.query_params.get("limit", self.pagination_class.page_size)),
+                "total": queryset.count(),
+            }
+        })
+    
 # Order Views ---
 class OrderCreateView(generics.CreateAPIView):
     serializer_class = OrderSerializer

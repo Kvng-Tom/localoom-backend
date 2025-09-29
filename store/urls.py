@@ -1,6 +1,5 @@
 from django.urls import path
 from .views import (
-    MyProductsListView,
     StorefrontListView,
     StorefrontDetailView,
     MyStorefrontView,
@@ -11,9 +10,13 @@ from .views import (
     OrderCreateView,
     BuyerOrderListView,
     ArtisanOrderListView,
+    ProductSearchListView
 )
 
 urlpatterns = [
+    # --- Public product search & list ---
+    path("products/", ProductSearchListView.as_view(), name="product-search-list"),
+
     # --- Artisan endpoints ---
     path("artisan/storefronts/", StorefrontListView.as_view(), name="artisan-storefront-list"),
     path("artisan/storefronts/<int:pk>/", StorefrontDetailView.as_view(), name="artisan-storefront-detail"),
@@ -21,11 +24,8 @@ urlpatterns = [
 
     # --- Artisan product management ---
     path("artisan/products/create/", ProductCreateView.as_view(), name="artisan-product-create"),
-    
     path("artisan/products/<int:pk>/", ProductUpdateDeleteView.as_view(), name="artisan-product-update-delete"),
-    # List products for a specific artisa
     
-    path("artisan/products/", MyProductsListView.as_view(), name="artisan-product-list"),
     # --- Buyer endpoints ---
     path("buyer/profile/", BuyerProfileView.as_view(), name="buyer-profile"),
 
