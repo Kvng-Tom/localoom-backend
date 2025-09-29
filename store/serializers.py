@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from .models import ArtisanProfile, BuyerProfile, Product, Order
+from decimal import Decimal 
 
 class BuyerProfileSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(
@@ -82,7 +83,7 @@ class ProductSerializer(serializers.ModelSerializer):
     price = serializers.DecimalField(
         max_digits=10,
         decimal_places=2,
-        min_value=0.01,
+        min_value=Decimal("0.01"),
         error_messages={
             "invalid": "Enter a valid price.",
             "min_value": "Price must be greater than zero."
@@ -145,7 +146,7 @@ class OrderSerializer(serializers.ModelSerializer):
     total_price = serializers.DecimalField(
         max_digits=10,
         decimal_places=2,
-        min_value=0.01,
+        min_value=Decimal("0.01"),
         error_messages={
             "invalid": "Enter a valid total price.",
             "min_value": "Total price must be greater than zero."
