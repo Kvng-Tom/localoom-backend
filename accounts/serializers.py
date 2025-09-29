@@ -21,20 +21,22 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
         # --- Rule for Buyers ---
         if role == User.Roles.BUYER:
-            if not email:
-                raise serializers.ValidationError({"email": "Buyers must register with an email."})
-            # Buyers should not use phone number (optional: strip it out)
-            data["phone_number"] = None  
+            if not email or not str(email).strip():
+                raise serializers.ValidationError({"email": "Buyers must register with a valid email."})
+            data["phone_number"] = None  # Buyers should not use phone number
 
         # --- Rule for Artisans ---
-        if role == User.Roles.ARTISAN:
-            if not email and not phone:
+        elif role == User.Roles.ARTISAN:
+            if (not email or not str(email).strip()) and (not phone or not str(phone).strip()):
                 raise serializers.ValidationError(
-                    {"error": "Artisans must register with either an email or a phone number."}
+                    {"non_field_errors": ["Artisans must register with either an email or a phone number."]}
                 )
 
+        else:
+            raise serializers.ValidationError({"role": "Invalid role selected."})
+
         # --- Normalize phone (optional if you have util) ---
-        if phone:
+        if phone and str(phone).strip():
             data["phone_number"] = normalize_phone_number(phone)
 
         return data
@@ -44,11 +46,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user = User(**validated_data)
         if password:
             user.set_password(password)
-        # default inactive until OTP verification
-        user.is_active = False
+        user.is_active = False  # default inactive until OTP verification
         user.save()
         return user
-
 class LoginSerializer(serializers.Serializer):
     identifier = serializers.CharField()
     password = serializers.CharField(write_only=True)
