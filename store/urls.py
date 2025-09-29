@@ -10,7 +10,8 @@ from .views import (
     OrderCreateView,
     BuyerOrderListView,
     ArtisanOrderListView,
-    ProductSearchListView
+    ProductSearchListView,
+    MyProductsListView,
 )
 
 urlpatterns = [
@@ -25,6 +26,7 @@ urlpatterns = [
     # --- Artisan product management ---
     path("artisan/products/create/", ProductCreateView.as_view(), name="artisan-product-create"),
     path("artisan/products/<int:pk>/", ProductUpdateDeleteView.as_view(), name="artisan-product-update-delete"),
+    path("artisan/products/", MyProductsListView.as_view(), name="artisan-products-list"),
     
     # --- Buyer endpoints ---
     path("buyer/profile/", BuyerProfileView.as_view(), name="buyer-profile"),

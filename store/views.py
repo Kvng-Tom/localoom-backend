@@ -115,6 +115,14 @@ class ProductSearchListView(generics.ListAPIView):
             }
         })
     
+class MyProductsListView(generics.ListAPIView):
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return Product.objects.filter(storefront=user.artisan_profile)
+    
 # Order Views ---
 class OrderCreateView(generics.CreateAPIView):
     serializer_class = OrderSerializer
