@@ -2,6 +2,7 @@ from rest_framework import generics, permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from .models import ArtisanProfile, Product, BuyerProfile, Order
 from .serializers import (
     ArtisanProfileSerializer,
@@ -9,6 +10,7 @@ from .serializers import (
     BuyerProfileSerializer,
     StorefrontSerializer,
     OrderSerializer,
+    ProductImageSerializer
 )
 
 # --- Buyer Profile Views ---
@@ -147,3 +149,14 @@ class ArtisanOrderListView(generics.ListAPIView):
 
     def get_queryset(self):
         return Order.objects.filter(artisan=self.request.user.artisan_profile)
+
+
+class ProductImageUploadView(generics.CreateAPIView):
+    serializer_class = ProductImageSerializer
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        product_id = self.request.data.get("product")
+        product = Product.objects.get(id=product_id)
+        serializer.save(product=product)
