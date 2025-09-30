@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import (
+    ProductImageUploadView,
     StorefrontListView,
     StorefrontDetailView,
     MyStorefrontView,
@@ -10,7 +11,8 @@ from .views import (
     OrderCreateView,
     BuyerOrderListView,
     ArtisanOrderListView,
-    ProductSearchListView
+    ProductSearchListView,
+    MyProductsListView,
 )
 
 urlpatterns = [
@@ -25,6 +27,8 @@ urlpatterns = [
     # --- Artisan product management ---
     path("artisan/products/create/", ProductCreateView.as_view(), name="artisan-product-create"),
     path("artisan/products/<int:pk>/", ProductUpdateDeleteView.as_view(), name="artisan-product-update-delete"),
+    path("artisan/products/", MyProductsListView.as_view(), name="artisan-products-list"),
+    path("artisan/products/upload-image/", ProductImageUploadView.as_view(), name="product-image-upload"),
     
     # --- Buyer endpoints ---
     path("buyer/profile/", BuyerProfileView.as_view(), name="buyer-profile"),

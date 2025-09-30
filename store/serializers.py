@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from .models import ArtisanProfile, BuyerProfile, Product, Order
-from decimal import Decimal
+from .models import ArtisanProfile, BuyerProfile, Product, Order, ProductImage
+from decimal import Decimal 
 
 class BuyerProfileSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(
@@ -71,8 +71,13 @@ class ArtisanProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at"
         ]
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ["id", "image"]
 
 class ProductSerializer(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True, read_only=True)
     name = serializers.CharField(
         max_length=250,
         error_messages={
@@ -104,12 +109,6 @@ class ProductSerializer(serializers.ModelSerializer):
             "min_value": "Stock quantity cannot be negative."
         }
     )
-    images = serializers.JSONField(
-        required=False,
-        error_messages={
-            "invalid": "Images must be a valid list."
-        }
-    )
     storefront = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
@@ -121,7 +120,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "price",
             "stock_quantity",
             "category",
-            "images",
+            "images",           
             "is_active",
             "created_at",
             "updated_at",
