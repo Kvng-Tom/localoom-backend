@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from .models import ArtisanProfile, BuyerProfile, Product, Order, ProductImage
+from .models import ArtisanProfile, BuyerProfile, Product, Order, ProductImage, Review
 from decimal import Decimal 
 
 class BuyerProfileSerializer(serializers.ModelSerializer):
@@ -76,40 +76,23 @@ class ProductImageSerializer(serializers.ModelSerializer):
         model = ProductImage
         fields = ["id", "image"]
 
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ["id", "product", "user", "rating", "comment", "created_at", "updated_at"]
+
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
-    name = serializers.CharField(
-        max_length=250,
-        error_messages={
-            "max_length": "Product name is too long (max 250 characters).",
-            "blank": "Product name cannot be empty."
-        }
-    )
-    price = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        min_value=Decimal("0.01"),
-        error_messages={
-            "invalid": "Enter a valid price.",
-            "min_value": "Price must be greater than zero."
-        }
-    )
-    category = serializers.CharField(
-        max_length=100,
-        required=False,
-        allow_blank=True,
-        error_messages={
-            "max_length": "Category name is too long (max 100 characters)."
-        }
-    )
-    stock_quantity = serializers.IntegerField(
-        min_value=0,
-        error_messages={
-            "invalid": "Enter a valid stock quantity.",
-            "min_value": "Stock quantity cannot be negative."
-        }
-    )
-    storefront = serializers.PrimaryKeyRelatedField(read_only=True)
+    sku = serializers.CharField(read_only=True)
+    artisan_location = serializers.CharField(source="storefront.location", read_only=True)
+    reviews = ReviewSerializer(many=True, read_only=True)  # Include reviews
+    average_rating = serializers.SerializerMethodField()  # Calculate average rating
+
+    def get_average_rating(self, obj):
+        reviews = obj.reviews.all()
+        if reviews.exists():
+            return sum(review.rating for review in reviews) / reviews.count()
+        return None
 
     class Meta:
         model = Product
@@ -118,13 +101,14 @@ class ProductSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "price",
-            "stock_quantity",
             "category",
-            "images",           
-            "is_active",
-            "created_at",
-            "updated_at",
-            "storefront"
+            "stock_quantity",
+            "storefront",
+            "images",
+            "sku",
+            "artisan_location",
+            "reviews",  # Include reviews
+            "average_rating"  # Include average rating
         ]
 class OrderSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(

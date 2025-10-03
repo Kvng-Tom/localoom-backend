@@ -64,6 +64,7 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)  # product visible or not
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    sku = models.CharField(max_length=20, unique=True, blank=True, editable=False)  # Auto-generated SKU
 
     class Meta:
         verbose_name = "Product"
@@ -71,6 +72,13 @@ class Product(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.storefront.display_name})"
+
+    def save(self, *args, **kwargs):
+        # Auto-generate SKU if not provided
+        if not self.sku:
+            category_prefix = self.category[:3].upper() if self.category else "GEN"
+            self.sku = f"{category_prefix}-{self.id or ''}"  # Combine category prefix and ID
+        super().save(*args, **kwargs)
 
 class BuyerProfile(models.Model):
     user = models.OneToOneField(
@@ -115,4 +123,18 @@ class ProductImage(models.Model):
     product = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)
     image = models.ImageField(upload_to="products/")
 
-   
+class Review(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    rating = models.PositiveIntegerField()
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Review"
+        verbose_name_plural = "Reviews"
+
+    def __str__(self):
+        return f"Review for {self.product.name} by {self.user}"
+

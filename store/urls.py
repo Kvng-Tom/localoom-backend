@@ -13,11 +13,16 @@ from .views import (
     ArtisanOrderListView,
     ProductSearchListView,
     MyProductsListView,
+    ProductListView,
+    ReviewListView,
+    ReviewCreateView,
 )
 
 urlpatterns = [
     # --- Public product search & list ---
     path("products/", ProductSearchListView.as_view(), name="product-search-list"),
+    # --- Public product list ---
+    path("products/all/", ProductListView.as_view(), name="product-list"),
 
     # --- Artisan endpoints ---
     path("artisan/storefronts/", StorefrontListView.as_view(), name="artisan-storefront-list"),
@@ -40,4 +45,8 @@ urlpatterns = [
     path("orders/create/", OrderCreateView.as_view(), name="order-create"),
     path("orders/buyer/", BuyerOrderListView.as_view(), name="buyer-order-list"),
     path("orders/artisan/", ArtisanOrderListView.as_view(), name="artisan-order-list"),
+
+    # --- Review endpoints ---
+    path("products/<int:product_id>/reviews/", ReviewListView.as_view(), name="product-reviews"),
+    path("products/reviews/create/", ReviewCreateView.as_view(), name="create-review"),
 ]
