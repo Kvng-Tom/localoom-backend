@@ -4,10 +4,12 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import ArtisanProfile, Product, BuyerProfile, Order, Review
+from .models import ArtisanProfile, Product, BuyerProfile, Order, Review
 from .serializers import (
     ArtisanProfileSerializer,
     ProductSerializer,
     BuyerProfileSerializer,
+    ReviewSerializer,
     StorefrontSerializer,
     OrderSerializer,
     ProductImageSerializer,
