@@ -203,10 +203,10 @@ class ProductListView(generics.ListAPIView):
         queryset = Product.objects.all()
 
         if category:
-            queryset = queryset.filter(category__iexact=category)  # Filter by category
+            queryset = queryset.filter(category__iexact=category)  
 
         if search:
-            queryset = queryset.filter(name__icontains=search)  # Search by name
+            queryset = queryset.filter(name__icontains=search)  
 
         return queryset.order_by(sort_by)
 
