@@ -86,6 +86,7 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ORIGINS = [
     "http://localhost:3000",
+    "httpps://local-loom.vercel.app"
 ]
 
 ROOT_URLCONF = 'localloom.urls'
