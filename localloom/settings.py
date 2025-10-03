@@ -86,7 +86,16 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ORIGINS = [
     "http://localhost:3000",
-    "https://local-loom.vercel.app"
+    "https://local-loom.vercel.app",
+]
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS"
 ]
 
 
