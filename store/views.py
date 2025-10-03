@@ -12,6 +12,7 @@ from .serializers import (
     OrderSerializer,
     ProductImageSerializer
 )
+from rest_framework import serializers
 
 # --- Buyer Profile Views ---
 class BuyerProfileView(generics.RetrieveUpdateAPIView):
@@ -158,5 +159,52 @@ class ProductImageUploadView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         product_id = self.request.data.get("product")
-        product = Product.objects.get(id=product_id)
+
+        # Check if product_id is provided
+        if not product_id:
+            raise serializers.ValidationError({"product": "Product ID is required."})
+
+        try:
+            # Try to fetch the product
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            # Return a meaningful error if the product does not exist
+            raise serializers.ValidationError({"product": "Product with the given ID does not exist."})
+
+        # Save the product image
         serializer.save(product=product)
+
+# --- Pagination for Product List ---
+class ProductPagination(PageNumberPagination):
+    page_size = 10  # Default number of items per page
+    page_size_query_param = "limit"  # Allow clients to specify page size
+    max_page_size = 100  # Maximum number of items per page
+
+# --- List All Products with Pagination ---
+class ProductListView(generics.ListAPIView):
+    serializer_class = ProductSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = ProductPagination  
+
+    def get_queryset(self):
+        sort_by = self.request.query_params.get("sort_by", "created_at")
+        sort_order = self.request.query_params.get("sort_order", "asc")
+        category = self.request.query_params.get("category")
+        search = self.request.query_params.get("search")  
+
+        valid_sort_fields = ["price", "created_at", "name", "sales_count"]
+        if sort_by not in valid_sort_fields:
+            sort_by = "created_at"
+
+        if sort_order == "desc":
+            sort_by = f"-{sort_by}"
+
+        queryset = Product.objects.all()
+
+        if category:
+            queryset = queryset.filter(category__iexact=category)  # Filter by category
+
+        if search:
+            queryset = queryset.filter(name__icontains=search)  # Search by name
+
+        return queryset.order_by(sort_by)
