@@ -3,14 +3,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import ArtisanProfile, Product, BuyerProfile, Order
+from .models import ArtisanProfile, Product, BuyerProfile, Order, Review
 from .serializers import (
     ArtisanProfileSerializer,
     ProductSerializer,
     BuyerProfileSerializer,
     StorefrontSerializer,
     OrderSerializer,
-    ProductImageSerializer
+    ProductImageSerializer,
+    ReviewSerializer
 )
 from rest_framework import serializers
 
@@ -208,3 +209,19 @@ class ProductListView(generics.ListAPIView):
             queryset = queryset.filter(name__icontains=search)  # Search by name
 
         return queryset.order_by(sort_by)
+
+# --- Review Views ---
+class ReviewListView(generics.ListAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        product_id = self.kwargs.get("product_id")
+        return Review.objects.filter(product_id=product_id)
+
+class ReviewCreateView(generics.CreateAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
