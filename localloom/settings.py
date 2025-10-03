@@ -84,10 +84,12 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
 ]
 
-CORS_ALLOW_ORIGINS = [
-    "http://localhost:3000",
-    "https://local-loom.vercel.app",
-]
+CORS_ALLOW_ALL_ORIGINS = True
+
+# [
+#     "http://localhost:3000",
+#     "https://local-loom.vercel.app",
+# ]
 
 CORS_ALLOW_METHODS = [
     "GET",
