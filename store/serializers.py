@@ -72,9 +72,11 @@ class ArtisanProfileSerializer(serializers.ModelSerializer):
             "updated_at"
         ]
 class ProductImageSerializer(serializers.ModelSerializer):
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+
     class Meta:
         model = ProductImage
-        fields = ["id", "image"]
+        fields = ["id", "image", "product"]
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
@@ -87,6 +89,7 @@ class ProductSerializer(serializers.ModelSerializer):
     artisan_location = serializers.CharField(source="storefront.location", read_only=True)
     reviews = ReviewSerializer(many=True, read_only=True)  # Include reviews
     average_rating = serializers.SerializerMethodField()  # Calculate average rating
+    storefront = serializers.PrimaryKeyRelatedField(read_only=True)
 
     def get_average_rating(self, obj):
         reviews = obj.reviews.all()
@@ -171,3 +174,16 @@ class StorefrontSerializer(serializers.ModelSerializer):
             "slug",
             "verified"
         ]
+class MinimalProductSerializer(serializers.ModelSerializer):
+    artisan_location = serializers.CharField(source="storefront.location", read_only=True)
+    average_rating = serializers.SerializerMethodField()
+
+    def get_average_rating(self, obj):
+        reviews = obj.reviews.all()
+        if reviews.exists():
+            return sum(review.rating for review in reviews) / reviews.count()
+        return None
+
+    class Meta:
+        model = Product
+        fields = ["name", "price", "artisan_location", "average_rating"]

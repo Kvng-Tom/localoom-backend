@@ -16,6 +16,7 @@ from .views import (
     ProductListView,
     ReviewListView,
     ReviewCreateView,
+    MinimalProductListView,
 )
 
 urlpatterns = [
@@ -23,6 +24,7 @@ urlpatterns = [
     path("products/", ProductSearchListView.as_view(), name="product-search-list"),
     # --- Public product list ---
     path("products/all/", ProductListView.as_view(), name="product-list"),
+    path("products/minimal/", MinimalProductListView.as_view(), name="minimal-product-list"),
 
     # --- Artisan endpoints ---
     path("artisan/storefronts/", StorefrontListView.as_view(), name="artisan-storefront-list"),
@@ -31,7 +33,7 @@ urlpatterns = [
 
     # --- Artisan product management ---
     path("artisan/products/create/", ProductCreateView.as_view(), name="artisan-product-create"),
-    path("artisan/products/<int:pk>/", ProductUpdateDeleteView.as_view(), name="artisan-product-update-delete"),
+    path("artisan/products/<slug:slug>/", ProductUpdateDeleteView.as_view(), name="artisan-product-update-delete"),
     path("artisan/products/", MyProductsListView.as_view(), name="artisan-products-list"),
     path("artisan/products/upload-image/", ProductImageUploadView.as_view(), name="product-image-upload"),
     
@@ -49,4 +51,5 @@ urlpatterns = [
     # --- Review endpoints ---
     path("products/<int:product_id>/reviews/", ReviewListView.as_view(), name="product-reviews"),
     path("products/reviews/create/", ReviewCreateView.as_view(), name="create-review"),
+    path("products/<slug:slug>/", ProductUpdateDeleteView.as_view(), name="product-detail"),
 ]
