@@ -1,6 +1,9 @@
 # store/models.py
 from django.db import models
 from django.conf import settings
+from django.utils.text import slugify
+import random
+import string
 
 
 class ArtisanProfile(models.Model):
@@ -65,20 +68,26 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     sku = models.CharField(max_length=20, unique=True, blank=True, editable=False)  # Auto-generated SKU
+    slug = models.SlugField(unique=True, blank=True)
 
+    def save (self, *args, **kwargs):
+            # Auto-generate slug if not provided
+            if not self.slug:
+                self.slug = slugify(self.name)
+            
+            # Auto-generate SKU if not provided
+            if not self.sku:
+                category_prefix = self.category[:3].upper() if self.category else "GEN"
+                random_numbers = ''.join(random.choices(string.digits, k=5))
+                self.sku = f"{category_prefix}-{random_numbers}"
+            
+            super().save(*args, **kwargs)
     class Meta:
         verbose_name = "Product"
         verbose_name_plural = "Products"
 
-    def __str__(self):
-        return f"{self.name} ({self.storefront.display_name})"
-
-    def save(self, *args, **kwargs):
-        # Auto-generate SKU if not provided
-        if not self.sku:
-            category_prefix = self.category[:3].upper() if self.category else "GEN"
-            self.sku = f"{category_prefix}-{self.id or ''}"  # Combine category prefix and ID
-        super().save(*args, **kwargs)
+    def __str__(self):       
+        return f"{self.name} ({self.storefront.full_name if self.storefront else 'No Storefront'})"
 
 class BuyerProfile(models.Model):
     user = models.OneToOneField(

@@ -11,7 +11,8 @@ from .serializers import (
     ReviewSerializer,
     StorefrontSerializer,
     OrderSerializer,
-    ProductImageSerializer
+    ProductImageSerializer,
+    MinimalProductSerializer
 )
 from rest_framework import serializers
 
@@ -63,9 +64,10 @@ class ProductCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         if not hasattr(user, "artisan_profile"):
+            # Automatically create an artisan profile if it doesn't exist
             ArtisanProfile.objects.create(
                 user=user,
-                full_name=user.full_name,
+                full_name=user.full_name or user.email or user.phone_number,
             )
         serializer.save(storefront=user.artisan_profile)
 
@@ -73,7 +75,7 @@ class ProductUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
-    lookup_field = "pk"
+    lookup_field = "slug"
 
 # --- List Products for a specific Artisan ---
 
@@ -161,15 +163,13 @@ class ProductImageUploadView(generics.CreateAPIView):
     def perform_create(self, serializer):
         product_id = self.request.data.get("product")
 
-        # Check if product_id is provided
+        # Validate product ID
         if not product_id:
             raise serializers.ValidationError({"product": "Product ID is required."})
 
         try:
-            # Try to fetch the product
             product = Product.objects.get(id=product_id)
         except Product.DoesNotExist:
-            # Return a meaningful error if the product does not exist
             raise serializers.ValidationError({"product": "Product with the given ID does not exist."})
 
         # Save the product image
@@ -210,6 +210,14 @@ class ProductListView(generics.ListAPIView):
 
         return queryset.order_by(sort_by)
 
+# --- Minimal Product Views ---
+class MinimalProductListView(generics.ListAPIView):
+    serializer_class = MinimalProductSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = ProductPagination
+
+    def get_queryset(self):
+        return Product.objects.filter(is_active=True)
 
 # --- Review Views ---
 class ReviewListView(generics.ListAPIView):
