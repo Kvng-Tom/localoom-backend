@@ -78,7 +78,7 @@ class ProductUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     lookup_field = "slug"
 
-# --- List Products for a specific Artisan ---
+# --List Products for a specific Artisan --
 
 class ProductPagination(PageNumberPagination):
     page_size = 10
