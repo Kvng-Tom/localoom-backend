@@ -13,11 +13,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='product',
-            name='sku',
-            field=models.CharField(blank=True, editable=False, max_length=20, unique=True),
-        ),
+        
         migrations.AddField(
             model_name='product',
             name='slug',
