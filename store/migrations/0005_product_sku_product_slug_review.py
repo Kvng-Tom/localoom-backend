@@ -16,11 +16,8 @@ class Migration(migrations.Migration):
         
         
         
-        migrations.AddField(
-            model_name='product',
-            name='slug',
-            field=models.SlugField(blank=True, unique=True),
-        ),
+        
+        
         migrations.CreateModel(
             name='Review',
             fields=[
