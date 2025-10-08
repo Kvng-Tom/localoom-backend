@@ -14,11 +14,7 @@ class Migration(migrations.Migration):
 
     operations = [
         
-        migrations.AddField(
-            model_name='product',
-            name='slug',
-            field=models.SlugField(blank=True, unique=True),
-        ),
+        
         migrations.CreateModel(
             name='Review',
             fields=[
