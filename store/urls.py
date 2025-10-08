@@ -43,7 +43,7 @@ urlpatterns = [
     # --- Artisan profile endpoint ---
     path("artisan/profile/", ArtisanProfileView.as_view(), name="artisan-profile"),
 
-    # --- Order endpoints ---
+    # -- Order endpoints ---
     path("orders/create/", OrderCreateView.as_view(), name="order-create"),
     path("orders/buyer/", BuyerOrderListView.as_view(), name="buyer-order-list"),
     path("orders/artisan/", ArtisanOrderListView.as_view(), name="artisan-order-list"),
