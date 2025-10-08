@@ -79,10 +79,12 @@ class ProductImageSerializer(serializers.ModelSerializer):
         fields = ["id", "image", "product"]
 
 class ReviewSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)  # Makes user read-only
+
     class Meta:
         model = Review
         fields = ["id", "product", "user", "rating", "comment", "created_at", "updated_at"]
-
+        
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     sku = serializers.CharField(read_only=True)
