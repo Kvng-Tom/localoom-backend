@@ -34,9 +34,7 @@ class ArtisanProfile(models.Model):
         null=True
     )
     about_you = models.TextField(blank=True, null=True) 
-    profile_picture = models.ImageField(
-        storage="cloudinary_storage.storage.MediaCloudinaryStorage", blank=True, null=True
-    )
+    profile_picture = models.ImageField(blank=True, null=True)
     bank_name = models.CharField(max_length=100, blank=True, null=True)
     account_number = models.CharField(max_length=30, blank=True, null=True)
     account_holder_name = models.CharField(max_length=100, blank=True, null=True)
@@ -96,9 +94,7 @@ class BuyerProfile(models.Model):
         related_name="buyer_profile"
     )
     full_name = models.CharField(max_length=255)
-    profile_image = models.ImageField(
-        storage="cloudinary_storage.storage.MediaCloudinaryStorage", blank=True, null=True
-    )
+    profile_image = models.ImageField(blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     location = models.CharField(max_length=255, blank=True, null=True)
@@ -130,9 +126,7 @@ class Order(models.Model):
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)
-    image = models.ImageField(
-        storage="cloudinary_storage.storage.MediaCloudinaryStorage"
-    )
+    image = models.ImageField()
 
 class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
