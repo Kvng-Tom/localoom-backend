@@ -15,10 +15,15 @@ import cloudinary
 import os
 from dotenv import find_dotenv, load_dotenv
 
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+from cloudinary_storage.storage import MediaCloudinaryStorage
+
+
 load_dotenv(find_dotenv())
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -86,8 +91,9 @@ CLOUDINARY_STORAGE = {
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-MEDIA_URL = '/media/'
+MEDIA_URL = 'https://res.cloudinary.com/ds1vagovl/'  
 
+print("DEFAULT_FILE_STORAGE:", DEFAULT_FILE_STORAGE)
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -316,4 +322,3 @@ LOGGING = {
 
 print(">>> CLOUDINARY CHECK <<<")
 print(cloudinary.config().cloud_name)
-
