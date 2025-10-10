@@ -11,6 +11,7 @@
 
 from pathlib import Path
 from datetime import timedelta
+import cloudinary
 import os
 from dotenv import find_dotenv, load_dotenv
 
@@ -311,4 +312,8 @@ LOGGING = {
     },
 }
 
+
+
+print(">>> CLOUDINARY CHECK <<<")
+print(cloudinary.config().cloud_name)
 
