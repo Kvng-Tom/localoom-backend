@@ -17,6 +17,7 @@ from .views import (
     ReviewListView,
     ReviewCreateView,
     MinimalProductListView,
+    ProductDetailView,
 )
 
 urlpatterns = [
@@ -52,5 +53,7 @@ urlpatterns = [
     # --- Review endpoints ---
     path("products/<int:product_id>/reviews/", ReviewListView.as_view(), name="product-reviews"),
     path("products/reviews/create/", ReviewCreateView.as_view(), name="create-review"),
-    path("products/<slug:slug>/", ProductUpdateDeleteView.as_view(), name="product-detail"),
+
+    # --- Product detail view ---
+    path("products/<slug:slug>/", ProductDetailView.as_view(), name="product-detail"),
 ]

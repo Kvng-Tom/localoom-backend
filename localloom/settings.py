@@ -9,21 +9,31 @@
 # https://docs.djangoproject.com/en/5.2/ref/settings/
 
 
-from pathlib import Path
-from datetime import timedelta
-import cloudinary
-import os
-from dotenv import find_dotenv, load_dotenv
 
+from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# --- Load environment file early ---
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Explicitly load .env file
+env_path = BASE_DIR / ".env"
+load_dotenv(env_path)
+
+if env_path.exists():
+    print(f"Loading environment from: {env_path}")
+    load_dotenv(env_path)
+else:
+    print("⚠️  .env file not found at", env_path)
+
+
+
+from datetime import timedelta
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 from cloudinary_storage.storage import MediaCloudinaryStorage
-
-
-load_dotenv(find_dotenv())
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -32,14 +42,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 
-ALLOWED_HOSTS = ['localoom-backend.onrender.com',
-                 '127.0.0.1',
-                 'localhost',
-                 'localoom-backend-dev.onrender.com',
-        ]
+ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+
+if ENVIRONMENT == "local":
+    DEBUG = True
+
+
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'localoom-backend.onrender.com', 'localoom-backend-dev.onrender.com']
 
 
 
@@ -148,7 +160,6 @@ WSGI_APPLICATION = 'localloom.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-import os
 
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "local")
 
@@ -178,6 +189,9 @@ elif ENVIRONMENT == "production":
         }
     }
 
+# Ensure DATABASES configuration is printed for debugging
+print("ENVIRONMENT:", ENVIRONMENT)
+print("DATABASES:", DATABASES)
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -320,5 +334,3 @@ LOGGING = {
 
 
 
-print(">>> CLOUDINARY CHECK <<<")
-print(cloudinary.config().cloud_name)
