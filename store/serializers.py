@@ -92,6 +92,7 @@ class ProductSerializer(serializers.ModelSerializer):
     reviews = ReviewSerializer(many=True, read_only=True)  # Include reviews
     average_rating = serializers.SerializerMethodField()  # Calculate average rating
     storefront = serializers.PrimaryKeyRelatedField(read_only=True)
+    slug = serializers.SlugField(read_only=True)  # Include slug field
 
     def get_average_rating(self, obj):
         reviews = obj.reviews.all()
@@ -113,7 +114,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "sku",
             "artisan_location",
             "reviews",  # Include reviews
-            "average_rating"  # Include average rating
+            "average_rating",  # Include average rating
+            "slug"  # Include slug field
         ]
 class OrderSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(
