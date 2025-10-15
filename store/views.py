@@ -276,6 +276,7 @@ class AddToCartView(generics.CreateAPIView):
 class UpdateCartItemView(generics.UpdateAPIView):
     serializer_class = CartSerializer
     permission_classes = [permissions.IsAuthenticated]
+    queryset = Cart.objects.all()  # Added queryset to resolve the error
 
     def patch(self, request, *args, **kwargs):
         user = request.user
@@ -299,10 +300,14 @@ class UpdateCartItemView(generics.UpdateAPIView):
 class RemoveCartItemView(generics.DestroyAPIView):
     serializer_class = CartSerializer
     permission_classes = [permissions.IsAuthenticated]
+    queryset = Cart.objects.all()  # Added queryset to ensure proper handling
 
     def delete(self, request, *args, **kwargs):
         user = request.user
         product_id = request.data.get("product")
+
+        if not product_id:
+            return Response({"error": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             cart_item = Cart.objects.get(user=user, product_id=product_id)
@@ -312,6 +317,19 @@ class RemoveCartItemView(generics.DestroyAPIView):
         cart_item.delete()
         return Response({"message": "Cart item removed successfully."}, status=status.HTTP_200_OK)
 
+    def get_schema_operation_parameters(self):
+        return [
+            {
+                "name": "product",
+                "required": True,
+                "in": "body",
+                "description": "ID of the product to remove from the cart",
+                "schema": {
+                    "type": "integer"
+                }
+            }
+        ]
+
 
 class FetchCartView(generics.ListAPIView):
     serializer_class = CartSerializer
@@ -319,3 +337,30 @@ class FetchCartView(generics.ListAPIView):
 
     def get_queryset(self):
         return Cart.objects.filter(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        cart_items = []
+        total = 0
+
+        for item in queryset:
+            product = item.product
+            subtotal = item.quantity * product.price
+            total += subtotal
+
+            cart_items.append({
+                "id": item.id,
+                "product": {
+                    "id": product.id,
+                    "name": product.name,
+                    "image": product.image.url if product.image else None,
+                    "price": product.price
+                },
+                "quantity": item.quantity,
+                "subtotal": subtotal
+            })
+
+        return Response({
+            "cart_items": cart_items,
+            "total": total
+        }, status=status.HTTP_200_OK)
