@@ -18,6 +18,8 @@ from .serializers import (
 )
 from rest_framework import serializers
 from rest_framework import status
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # --- Buyer Profile Views ---
 class BuyerProfileView(generics.RetrieveUpdateAPIView):
@@ -303,6 +305,20 @@ class RemoveCartItemView(generics.DestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Cart.objects.all()  # Added queryset to ensure proper handling
 
+    @swagger_auto_schema(
+        operation_description="Remove a product from the cart",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "product": openapi.Schema(
+                    type=openapi.TYPE_INTEGER,
+                    description="ID of the product to remove from the cart",
+                )
+            },
+            required=["product"],
+        ),
+        responses={200: "Cart item removed successfully."},
+    )
     def delete(self, request, *args, **kwargs):
         user = request.user
         product_id = request.data.get("product")
@@ -317,20 +333,6 @@ class RemoveCartItemView(generics.DestroyAPIView):
 
         cart_item.delete()
         return Response({"message": "Cart item removed successfully."}, status=status.HTTP_200_OK)
-
-    def get_schema_operation_parameters(self):
-        return [
-            {
-                "name": "product",
-                "required": True,
-                "in": "body",
-                "description": "ID of the product to remove from the cart",
-                "schema": {
-                    "type": "integer"
-                }
-            }
-        ]
-
 
 class FetchCartView(generics.ListAPIView):
     serializer_class = CartSerializer
