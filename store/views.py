@@ -276,7 +276,8 @@ class AddToCartView(generics.CreateAPIView):
 class UpdateCartItemView(generics.UpdateAPIView):
     serializer_class = CartSerializer
     permission_classes = [permissions.IsAuthenticated]
-    queryset = Cart.objects.all()  # Added queryset to resolve the error
+    queryset = Cart.objects.all()
+    lookup_field = "product_id"  # Updated lookup field
 
     def patch(self, request, *args, **kwargs):
         user = request.user
