@@ -247,6 +247,45 @@ class ProductDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
     lookup_field = "slug"
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        reviews = instance.reviews.all()
+        total_reviews = reviews.count()
+
+        # Calculate rating distribution
+        rating_distribution = {
+            str(rating): (reviews.filter(rating=rating).count() / total_reviews * 100) if total_reviews > 0 else 0
+            for rating in range(1, 6)
+        }
+
+        response_data = {
+            "id": instance.id,
+            "name": instance.name,
+            "description": instance.description,
+            "price": instance.price,
+            "category": instance.category.name if instance.category else None,
+            "stock_quantity": instance.stock_quantity,
+            "storefront": instance.storefront.id,
+            "images": [
+                {"id": image.id, "image": image.image.url} for image in instance.images.all()
+            ],
+            "sku": instance.sku,
+            "reviews": [
+                {
+                    "id": review.id,
+                    "rating": review.rating,
+                    "comment": review.comment,
+                    "created_at": review.created_at,
+                    "updated_at": review.updated_at
+                } for review in reviews
+            ],
+            "average_rating": instance.average_rating,
+            "rating_distribution": rating_distribution,
+            "slug": instance.slug
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
 # --- Add to Cart View ---
 class AddToCartView(generics.CreateAPIView):
     serializer_class = CartSerializer
