@@ -252,6 +252,13 @@ class ProductDetailView(generics.RetrieveAPIView):
         reviews = instance.reviews.all()
         total_reviews = reviews.count()
 
+        # Calculate average rating
+        average_rating = (
+            sum(review.rating for review in reviews) / total_reviews
+            if total_reviews > 0
+            else 0
+        )
+
         # Calculate rating distribution
         rating_distribution = {
             str(rating): (reviews.filter(rating=rating).count() / total_reviews * 100) if total_reviews > 0 else 0
@@ -263,7 +270,7 @@ class ProductDetailView(generics.RetrieveAPIView):
             "name": instance.name,
             "description": instance.description,
             "price": instance.price,
-            "category": instance.category,  # Fixed to handle category as a string
+            "category": instance.category,
             "stock_quantity": instance.stock_quantity,
             "storefront": instance.storefront.id,
             "images": [
@@ -279,7 +286,7 @@ class ProductDetailView(generics.RetrieveAPIView):
                     "updated_at": review.updated_at
                 } for review in reviews
             ],
-            "average_rating": instance.average_rating,
+            "average_rating": average_rating,  # Dynamically calculated
             "rating_distribution": rating_distribution,
             "slug": instance.slug
         }
