@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from .models import ArtisanProfile, BuyerProfile, Product, Order, ProductImage, Review
+from .models import ArtisanProfile, BuyerProfile, Product, Order, ProductImage, Review, Cart
 from decimal import Decimal 
 
 class BuyerProfileSerializer(serializers.ModelSerializer):
@@ -191,3 +191,8 @@ class MinimalProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ["name", "price", "artisan_location", "average_rating"]
+
+class CartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'product', 'quantity', 'created_at']

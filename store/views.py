@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import ArtisanProfile, Product, BuyerProfile, Order, Review
+from .models import ArtisanProfile, Product, BuyerProfile, Order, Review, Cart
 from .models import ArtisanProfile, Product, BuyerProfile, Order, Review
 from .serializers import (
     ArtisanProfileSerializer,
@@ -13,9 +13,11 @@ from .serializers import (
     StorefrontSerializer,
     OrderSerializer,
     ProductImageSerializer,
-    MinimalProductSerializer
+    MinimalProductSerializer,
+    CartSerializer
 )
 from rest_framework import serializers
+from rest_framework import status
 
 # --- Buyer Profile Views ---
 class BuyerProfileView(generics.RetrieveUpdateAPIView):
@@ -242,3 +244,78 @@ class ProductDetailView(generics.RetrieveAPIView):
     serializer_class = ProductSerializer
     permission_classes = [permissions.AllowAny]
     lookup_field = "slug"
+
+# --- Add to Cart View ---
+class AddToCartView(generics.CreateAPIView):
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        product_id = request.data.get("product")
+        quantity = request.data.get("quantity", 1)
+
+        try:
+            product = Product.objects.get(id=product_id, is_active=True)
+        except Product.DoesNotExist:
+            return Response({"error": "Product not found or inactive."}, status=status.HTTP_404_NOT_FOUND)
+
+        if product.stock_quantity < int(quantity):
+            return Response({"error": "Insufficient stock."}, status=status.HTTP_400_BAD_REQUEST)
+
+        cart_item, created = Cart.objects.get_or_create(user=user, product=product)
+        if not created:
+            cart_item.quantity += int(quantity)
+            cart_item.save()
+        else:
+            cart_item.quantity = int(quantity)
+            cart_item.save()
+
+        return Response({"message": "Item added to cart successfully."}, status=status.HTTP_201_CREATED)
+
+class UpdateCartItemView(generics.UpdateAPIView):
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        product_id = request.data.get("product")
+        quantity = request.data.get("quantity")
+
+        try:
+            cart_item = Cart.objects.get(user=user, product_id=product_id)
+        except Cart.DoesNotExist:
+            return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if quantity:
+            if cart_item.product.stock_quantity < int(quantity):
+                return Response({"error": "Insufficient stock."}, status=status.HTTP_400_BAD_REQUEST)
+            cart_item.quantity = int(quantity)
+            cart_item.save()
+
+        return Response({"message": "Cart item updated successfully."}, status=status.HTTP_200_OK)
+
+
+class RemoveCartItemView(generics.DestroyAPIView):
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, *args, **kwargs):
+        user = request.user
+        product_id = request.data.get("product")
+
+        try:
+            cart_item = Cart.objects.get(user=user, product_id=product_id)
+        except Cart.DoesNotExist:
+            return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        cart_item.delete()
+        return Response({"message": "Cart item removed successfully."}, status=status.HTTP_200_OK)
+
+
+class FetchCartView(generics.ListAPIView):
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Cart.objects.filter(user=self.request.user)
