@@ -103,7 +103,7 @@ CLOUDINARY_STORAGE = {
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-MEDIA_URL = 'https://res.cloudinary.com/ds1vagovl/'  
+# MEDIA_URL = 'https://res.cloudinary.com/ds1vagovl/'  
 
 print("DEFAULT_FILE_STORAGE:", DEFAULT_FILE_STORAGE)
 
