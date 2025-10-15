@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import ArtisanProfile, Product, BuyerProfile, Order, Review
+from .models import ArtisanProfile, Product, BuyerProfile, Order, Review, Cart
 from .models import ArtisanProfile, Product, BuyerProfile, Order, Review
 from .serializers import (
     ArtisanProfileSerializer,
@@ -13,9 +13,13 @@ from .serializers import (
     StorefrontSerializer,
     OrderSerializer,
     ProductImageSerializer,
-    MinimalProductSerializer
+    MinimalProductSerializer,
+    CartSerializer
 )
 from rest_framework import serializers
+from rest_framework import status
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # --- Buyer Profile Views ---
 class BuyerProfileView(generics.RetrieveUpdateAPIView):
@@ -242,3 +246,172 @@ class ProductDetailView(generics.RetrieveAPIView):
     serializer_class = ProductSerializer
     permission_classes = [permissions.AllowAny]
     lookup_field = "slug"
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        reviews = instance.reviews.all()
+        total_reviews = reviews.count()
+
+        # Calculate average rating
+        average_rating = (
+            sum(review.rating for review in reviews) / total_reviews
+            if total_reviews > 0
+            else 0
+        )
+
+        # Calculate rating distribution
+        rating_distribution = {
+            str(rating): (reviews.filter(rating=rating).count() / total_reviews * 100) if total_reviews > 0 else 0
+            for rating in range(1, 6)
+        }
+
+        response_data = {
+            "id": instance.id,
+            "name": instance.name,
+            "description": instance.description,
+            "price": instance.price,
+            "category": instance.category,
+            "stock_quantity": instance.stock_quantity,
+            "storefront": instance.storefront.id,
+            "images": [
+                {"id": image.id, "image": image.image.url} for image in instance.images.all()
+            ],
+            "sku": instance.sku,
+            "reviews": [
+                {
+                    "id": review.id,
+                    "rating": review.rating,
+                    "comment": review.comment,
+                    "created_at": review.created_at,
+                    "updated_at": review.updated_at
+                } for review in reviews
+            ],
+            "average_rating": average_rating,  # Dynamically calculated
+            "rating_distribution": rating_distribution,
+            "slug": instance.slug
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+# --- Add to Cart View ---
+class AddToCartView(generics.CreateAPIView):
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        product_id = request.data.get("product")
+        quantity = request.data.get("quantity", 1)
+
+        try:
+            product = Product.objects.get(id=product_id, is_active=True)
+        except Product.DoesNotExist:
+            return Response({"error": "Product not found or inactive."}, status=status.HTTP_404_NOT_FOUND)
+
+        if product.stock_quantity < int(quantity):
+            return Response({"error": "Insufficient stock."}, status=status.HTTP_400_BAD_REQUEST)
+
+        cart_item, created = Cart.objects.get_or_create(user=user, product=product)
+        if not created:
+            cart_item.quantity += int(quantity)
+            cart_item.save()
+        else:
+            cart_item.quantity = int(quantity)
+            cart_item.save()
+
+        return Response({"message": "Item added to cart successfully."}, status=status.HTTP_201_CREATED)
+
+class UpdateCartItemView(generics.UpdateAPIView):
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Cart.objects.all()
+    lookup_field = "product_id"  # Updated lookup field
+
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        product_id = request.data.get("product")
+        quantity = request.data.get("quantity")
+
+        try:
+            cart_item = Cart.objects.get(user=user, product_id=product_id)
+        except Cart.DoesNotExist:
+            return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if quantity:
+            if cart_item.product.stock_quantity < int(quantity):
+                return Response({"error": "Insufficient stock."}, status=status.HTTP_400_BAD_REQUEST)
+            cart_item.quantity = int(quantity)
+            cart_item.save()
+
+        return Response({"message": "Cart item updated successfully."}, status=status.HTTP_200_OK)
+
+
+class RemoveCartItemView(generics.DestroyAPIView):
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Cart.objects.all()  # Added queryset to ensure proper handling
+
+    @swagger_auto_schema(
+        operation_description="Remove a product from the cart",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "product": openapi.Schema(
+                    type=openapi.TYPE_INTEGER,
+                    description="ID of the product to remove from the cart",
+                )
+            },
+            required=["product"],
+        ),
+        responses={200: "Cart item removed successfully."},
+    )
+    def delete(self, request, *args, **kwargs):
+        user = request.user
+        product_id = request.data.get("product")
+
+        if not product_id:
+            return Response({"error": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            cart_item = Cart.objects.get(user=user, product_id=product_id)
+        except Cart.DoesNotExist:
+            return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        cart_item.delete()
+        return Response({"message": "Cart item removed successfully."}, status=status.HTTP_200_OK)
+
+class FetchCartView(generics.ListAPIView):
+    serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Cart.objects.filter(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        cart_items = []
+        total = 0
+
+        for item in queryset:
+            product = item.product
+            # Get the first image from the related images field
+            first_image = product.images.first().image.url if product.images.exists() else None
+            subtotal = item.quantity * product.price
+            total += subtotal
+
+            cart_items.append({
+                "id": item.id,
+                "product": {
+                    "id": product.id,
+                    "name": product.name,
+                    "image": first_image,
+                    "price": product.price
+                },
+                "quantity": item.quantity,
+                "subtotal": subtotal
+            })
+
+        return Response({
+            "cart_items": cart_items,
+            "total": total
+        }, status=status.HTTP_200_OK)

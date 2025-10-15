@@ -5,6 +5,7 @@ from django.utils.text import slugify
 import random
 import string
 from django.contrib.auth import get_user_model
+from cloudinary.models import CloudinaryField
 
 
 class ArtisanProfile(models.Model):
@@ -127,7 +128,7 @@ class Order(models.Model):
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)
-    image = models.ImageField()
+    image = CloudinaryField('image')
 
 class Review(models.Model):
     product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='reviews')
