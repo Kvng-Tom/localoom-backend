@@ -263,7 +263,7 @@ class ProductDetailView(generics.RetrieveAPIView):
             "name": instance.name,
             "description": instance.description,
             "price": instance.price,
-            "category": instance.category.name if instance.category else None,
+            "category": instance.category,  # Fixed to handle category as a string
             "stock_quantity": instance.stock_quantity,
             "storefront": instance.storefront.id,
             "images": [
