@@ -345,6 +345,8 @@ class FetchCartView(generics.ListAPIView):
 
         for item in queryset:
             product = item.product
+            # Get the first image from the related images field
+            first_image = product.images.first().image.url if product.images.exists() else None
             subtotal = item.quantity * product.price
             total += subtotal
 
@@ -353,7 +355,7 @@ class FetchCartView(generics.ListAPIView):
                 "product": {
                     "id": product.id,
                     "name": product.name,
-                    "image": product.image.url if product.image else None,
+                    "image": first_image,
                     "price": product.price
                 },
                 "quantity": item.quantity,
