@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from .models import ArtisanProfile, Product, BuyerProfile, Order, Review, Cart
+from .models import ArtisanProfile, Product, BuyerProfile, Order, ProductImage, Review, Cart
 from .models import ArtisanProfile, Product, BuyerProfile, Order, Review
 from .serializers import (
     ArtisanProfileSerializer,
@@ -91,40 +91,38 @@ class ProductPagination(PageNumberPagination):
 
 class ProductSearchListView(generics.ListAPIView):
     serializer_class = ProductSerializer
-    permission_classes = [permissions.AllowAny]
     pagination_class = ProductPagination
-
-    def get_queryset(self):
-        queryset = Product.objects.filter(is_active=True)
-        search = self.request.query_params.get('search')
-        category = self.request.query_params.get('category')
-        if search:
-            queryset = queryset.filter(name__icontains=search)
-        if category:
-            queryset = queryset.filter(category__iexact=category)
-        return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         page = self.paginate_queryset(queryset)
-        serializer = self.get_serializer(page, many=True)
-        return Response({
-            "products": [
-                {
-                    "id": prod["id"],
-                    "name": prod["name"],
-                    "price": prod["price"],
-                    "image": prod["images"][0] if prod["images"] else None,
-                    "category": prod["category"],
-                }
-                for prod in serializer.data
-            ],
-            "pagination": {
-                "page": int(request.query_params.get("page", 1)),
-                "limit": int(request.query_params.get("limit", self.pagination_class.page_size)),
-                "total": queryset.count(),
-            }
-        })
+
+        if page is not None:
+            # Serialize each product manually to include consistent image URLs
+            results = []
+            for product in page:
+                images = ProductImage.objects.filter(product=product)
+                image_data = ProductImageSerializer(images, many=True).data
+
+                results.append({
+                    "id": product.id,
+                    "name": product.name,
+                    "description": product.description,
+                    "price": product.price,
+                    "category": product.category,
+                    "stock_quantity": product.stock_quantity,
+                    "storefront": product.storefront.id if product.storefront else None,
+                    "images": image_data,  # ✅ full Cloudinary URLs
+                    "sku": product.sku,
+                    "average_rating": getattr(product, "average_rating", None),
+                    "slug": product.slug,
+                })
+
+            return self.get_paginated_response(results)
+
+        # If pagination is not used
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     
 class MyProductsListView(generics.ListAPIView):
     serializer_class = ProductSerializer
