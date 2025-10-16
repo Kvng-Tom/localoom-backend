@@ -1,4 +1,5 @@
 from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .utils import normalize_phone_number
 
@@ -16,9 +17,14 @@ class UserManager(BaseUserManager):
 
         user = self.model(email=email, **extra_fields)
         if password:
-            user.set_password(password)
+            try:
+                validate_password(password)
+                user.set_password(password)
+            except ValidationError as e:
+                raise ValueError(f"Password validation error: {e}")
         else:
             user.set_unusable_password()
+
         user.save(using=self._db)
         return user
 

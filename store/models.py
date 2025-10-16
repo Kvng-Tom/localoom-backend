@@ -63,7 +63,10 @@ class Product(models.Model):
     description = models.TextField()
     price =  models.DecimalField(max_digits=10, decimal_places=2)
     stock_quantity = models.PositiveIntegerField(default=0)
-    category = models.CharField(max_length=100, blank=True, null=True)
+    category = models.CharField(
+        max_length=100,
+        choices=ArtisanProfile.CRAFT_CHOICES
+    )
     is_active = models.BooleanField(default=True)  # product visible or not
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

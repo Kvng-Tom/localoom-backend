@@ -2,6 +2,9 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from .models import ArtisanProfile, BuyerProfile, Product, Order, ProductImage, Review, Cart
 from decimal import Decimal 
+import os
+
+CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "ds1vagovl")
 
 class BuyerProfileSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(
@@ -71,8 +74,15 @@ class ArtisanProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at"
         ]
+
 class ProductImageSerializer(serializers.ModelSerializer):
-    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
+    image = serializers.SerializerMethodField()
+
+    def get_image(self, obj):
+        image_path = str(obj.image) if obj.image else ""
+        if not image_path.startswith("http"):
+            return f"https://res.cloudinary.com/ds1vagovl/{image_path}"
+        return image_path
 
     class Meta:
         model = ProductImage
