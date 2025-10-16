@@ -80,9 +80,20 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         image_path = str(obj.image) if obj.image else ""
-        if not image_path.startswith("http"):
+
+        if not image_path:
+            return None
+
+        # ✅ If it's already a full Cloudinary URL, return it as-is
+        if image_path.startswith("http"):
+            return image_path
+
+        # ✅ If it starts with "image/upload", don't duplicate it
+        if image_path.startswith("image/upload"):
             return f"https://res.cloudinary.com/ds1vagovl/{image_path}"
-        return image_path
+
+        # ⚙️ Otherwise, assume Cloudinary path is missing "image/upload/"
+        return f"https://res.cloudinary.com/ds1vagovl/image/upload/{image_path}"
 
     class Meta:
         model = ProductImage

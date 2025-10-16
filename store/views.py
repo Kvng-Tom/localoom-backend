@@ -274,7 +274,7 @@ class ProductDetailView(generics.RetrieveAPIView):
             "stock_quantity": instance.stock_quantity,
             "storefront": instance.storefront.id,
             "images": [
-                {"id": image.id, "image": image.image.url} for image in instance.images.all()
+                {"id": image.id, "image": ProductImageSerializer(image).data["image"]} for image in instance.images.all()
             ],
             "sku": instance.sku,
             "reviews": [
@@ -395,7 +395,7 @@ class FetchCartView(generics.ListAPIView):
         for item in queryset:
             product = item.product
             # Get the first image from the related images field
-            first_image = product.images.first().image.url if product.images.exists() else None
+            first_image = ProductImageSerializer(product.images.first()).data["image"] if product.images.exists() else None
             subtotal = item.quantity * product.price
             total += subtotal
 
