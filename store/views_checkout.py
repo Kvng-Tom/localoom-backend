@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from .models import Order, Cart
+from .models import Order, OrderItem, Cart, ShippingAddress
 from .serializers import OrderSerializer
 
 class CheckoutView(generics.CreateAPIView):
@@ -9,25 +9,50 @@ class CheckoutView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         user = request.user
-        shipping_info = request.data.get("shipping_info")
+        shipping_data = request.data.get("shipping_address")
 
-        if not shipping_info:
-            return Response({"error": "Shipping information is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not shipping_data:
+            return Response({"error": "Shipping address is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Get user's cart
         cart_items = Cart.objects.filter(user=user)
         if not cart_items.exists():
-            return Response({"error": "Cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Your cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
 
-        total = sum(item.quantity * item.product.price for item in cart_items)
+        # Calculate total
+        total_amount = sum(item.product.price * item.quantity for item in cart_items)
 
-        # Create the order
-        order = Order.objects.create(user=user, shipping_info=shipping_info, total=total)
+        # Create shipping address (if provided as data)
+        if isinstance(shipping_data, dict):
+            shipping_address = ShippingAddress.objects.create(user=user, **shipping_data)
+        else:
+            try:
+                shipping_address = ShippingAddress.objects.get(id=shipping_data, user=user)
+            except ShippingAddress.DoesNotExist:
+                return Response({"error": "Invalid shipping address ID."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Add cart items to the order
+        # Create order
+        order = Order.objects.create(
+            user=user,
+            shipping_address=shipping_address,
+            total_amount=total_amount,
+            payment_status='pending'
+        )
+
+        # Move cart items into order items
         for item in cart_items:
-            order.items.create(product=item.product, quantity=item.quantity, price=item.product.price)
+            OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                price=item.product.price
+            )
 
         # Clear the cart
         cart_items.delete()
 
-        return Response({"message": "Order placed successfully.", "order_id": order.id}, status=status.HTTP_201_CREATED)
+        serializer = self.get_serializer(order)
+        return Response({
+            "message": "Order placed successfully.",
+            "order": serializer.data
+        }, status=status.HTTP_201_CREATED)
