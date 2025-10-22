@@ -266,7 +266,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True)
+    items = OrderItemSerializer(many=True, read_only=True)
     shipping_address = ShippingAddressSerializer()
     user = serializers.StringRelatedField(read_only=True)
 
@@ -283,8 +283,15 @@ class OrderSerializer(serializers.ModelSerializer):
             'transaction_date',
             'created_at',
         ]
-        read_only_fields = ['payment_reference', 'payment_status', 'transaction_date', 'created_at']
-
+        read_only_fields = [
+            'items',
+            'total_amount',
+            'payment_reference',
+            'payment_status',
+            'transaction_date',
+            'created_at'
+        ]
+        
     def create(self, validated_data):
         items_data = validated_data.pop('items')
         shipping_data = validated_data.pop('shipping_address')
