@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     #my apps
     'accounts',
     'store',
+    'payment',
 
     #third party
     'corsheaders',
@@ -105,7 +106,7 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # MEDIA_URL = 'https://res.cloudinary.com/ds1vagovl/'  
 
-print("DEFAULT_FILE_STORAGE:", DEFAULT_FILE_STORAGE)
+
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -189,9 +190,6 @@ elif ENVIRONMENT == "production":
         }
     }
 
-# Ensure DATABASES configuration is printed for debugging
-print("ENVIRONMENT:", ENVIRONMENT)
-print("DATABASES:", DATABASES)
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -202,6 +200,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -333,4 +334,7 @@ LOGGING = {
 }
 
 
-
+#Paystack Configuration
+PAYSTACK_PUBLIC_KEY = os.getenv("PAYSTACK_PUBLIC_KEY")
+PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
+PAYSTACK_BASE_URL = os.getenv("PAYSTACK_BASE_URL")

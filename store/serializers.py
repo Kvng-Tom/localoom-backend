@@ -1,6 +1,16 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from .models import ArtisanProfile, BuyerProfile, Product, Order, ProductImage, Review, Cart
+from .models import (
+    ArtisanProfile,
+    BuyerProfile,
+    Product,
+    Order,
+    ProductImage,
+    Review,
+    Cart,
+    ShippingAddress,
+    OrderItem,
+)
 from decimal import Decimal 
 import os
 
@@ -109,18 +119,12 @@ class ReviewSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     sku = serializers.CharField(read_only=True)
-    artisan_location = serializers.CharField(source="storefront.location", read_only=True)
+    artisan_location = serializers.SerializerMethodField()
     reviews = ReviewSerializer(many=True, read_only=True)  # Include reviews
     average_rating = serializers.SerializerMethodField()  # Calculate average rating
     storefront = serializers.PrimaryKeyRelatedField(read_only=True)
     slug = serializers.SlugField(read_only=True)  # Include slug field
-
-    def get_average_rating(self, obj):
-        reviews = obj.reviews.all()
-        if reviews.exists():
-            return sum(review.rating for review in reviews) / reviews.count()
-        return None
-
+    
     class Meta:
         model = Product
         fields = [
@@ -138,6 +142,24 @@ class ProductSerializer(serializers.ModelSerializer):
             "average_rating",  # Include average rating
             "slug"  # Include slug field
         ]
+
+    def get_average_rating(self, obj):
+        reviews = obj.reviews.all()
+        if reviews.exists():
+            return sum(review.rating for review in reviews) / reviews.count()
+        return None
+    
+    def get_artisan_location(self, obj):
+        artisan = obj.storefront
+        if artisan:
+            state = artisan.state or ""
+            country = artisan.country or ""
+            location = f"{state}, {country}".strip(", ")
+            return location if location else "Unknown"
+        return "Unknown"
+
+
+
 class OrderSerializer(serializers.ModelSerializer):
     product = serializers.PrimaryKeyRelatedField(
         queryset=Product.objects.all(),
@@ -217,3 +239,69 @@ class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
         fields = ['id', 'product', 'quantity', 'created_at']
+
+
+
+class ShippingAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShippingAddress
+        fields = [
+            'id',
+            'address',
+            'city',
+            'state',
+            'country',
+            'postal_code',
+            'phone_number',
+        ]
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'product', 'product_name', 'quantity', 'price', 'get_total']
+        read_only_fields = ['get_total']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True)
+    shipping_address = ShippingAddressSerializer()
+    user = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            'id',
+            'user',
+            'shipping_address',
+            'items',
+            'total_amount',
+            'payment_reference',
+            'payment_status',
+            'transaction_date',
+            'created_at',
+        ]
+        read_only_fields = ['payment_reference', 'payment_status', 'transaction_date', 'created_at']
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items')
+        shipping_data = validated_data.pop('shipping_address')
+
+        user = self.context['request'].user
+        shipping_address = ShippingAddress.objects.create(user=user, **shipping_data)
+
+        order = Order.objects.create(
+            user=user,
+            shipping_address=shipping_address,
+            total_amount=validated_data['total_amount']
+        )
+
+        for item_data in items_data:
+            OrderItem.objects.create(order=order, **item_data)
+
+        return order
+    
+
+

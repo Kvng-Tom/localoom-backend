@@ -4,7 +4,6 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import ArtisanProfile, Product, BuyerProfile, Order, ProductImage, Review, Cart
-from .models import ArtisanProfile, Product, BuyerProfile, Order, Review
 from .serializers import (
     ArtisanProfileSerializer,
     ProductSerializer,
@@ -413,3 +412,18 @@ class FetchCartView(generics.ListAPIView):
             "cart_items": cart_items,
             "total": total
         }, status=status.HTTP_200_OK)
+
+class CheckoutView(generics.CreateAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        return Response({
+            "message": "Order placed successfully!",
+            "order_id": order.id,
+            "total_amount": order.total_amount,
+            "payment_status": order.payment_status,
+        }, status=status.HTTP_201_CREATED)

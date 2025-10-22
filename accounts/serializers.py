@@ -1,4 +1,5 @@
-
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
 from .models import User
 from .utils import normalize_phone_number
@@ -14,6 +15,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             "role": {"required": True},
         }
 
+    def validate_password(self, value):
+        """Use Django's built-in password validators"""
+        try:
+            validate_password(value)
+        except ValidationError as e:
+            raise serializers.ValidationError(e.messages)
+        return value
+    
     def validate(self, data):
         role = data.get("role")
         email = data.get("email")
@@ -76,9 +85,19 @@ class ResetPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
 
+    def validate_password(self, value):
+        """Use Django’s built-in validators (length, common, numeric, etc.)"""
+        try:
+            validate_password(value)
+        except ValidationError as e:
+            raise serializers.ValidationError(e.messages)
+        return value
+    
     def validate(self, data):
         if data["password"] != data["confirm_password"]:
             raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+        
+        self.validate_password(data["password"])
         return data
 
 

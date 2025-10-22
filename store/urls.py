@@ -22,6 +22,7 @@ from .views import (
     UpdateCartItemView,
     RemoveCartItemView,
     FetchCartView,
+    CheckoutView
 )
 
 urlpatterns = [
@@ -62,8 +63,10 @@ urlpatterns = [
     path("products/<slug:slug>/", ProductDetailView.as_view(), name="product-detail"),
 
     # --- Cart endpoints ---
-    path("cart/add/", AddToCartView.as_view(), name="add-to-cart"),  # Add to Cart: Allows users to add products to their cart.
-    path("cart/update/", UpdateCartItemView.as_view(), name="update-cart-item"),  # Update Cart Item: Enables users to update the quantity of items in their cart.
-    path("cart/remove/", RemoveCartItemView.as_view(), name="remove-cart-item"),  # Remove Cart Item: Allows users to remove items from their cart.
-    path("cart/", FetchCartView.as_view(), name="fetch-cart"),  # Fetch Cart: Retrieves the current user's cart with all items and their details.
+    path("cart/add/", AddToCartView.as_view(), name="add-to-cart"), 
+    path("cart/update/", UpdateCartItemView.as_view(), name="update-cart-item"),  
+    path("cart/remove/", RemoveCartItemView.as_view(), name="remove-cart-item"), 
+ 
+    path("cart/", FetchCartView.as_view(), name="fetch-cart"),  
+    path("cart/checkout/", CheckoutView.as_view(), name="checkout"),
 ]
