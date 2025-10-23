@@ -241,28 +241,22 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ['id', 'product', 'quantity', 'created_at']
 
 
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    get_total = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderItem
+        fields = ["id", "product", "product_name", "quantity", "price", "get_total"]
+
+    def get_total(self, obj):
+        return obj.quantity * obj.price
+
 
 class ShippingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingAddress
-        fields = [
-            'id',
-            'address',
-            'city',
-            'state',
-            'country',
-            'postal_code',
-            'phone_number',
-        ]
-
-
-class OrderItemSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True)
-
-    class Meta:
-        model = OrderItem
-        fields = ['id', 'product', 'product_name', 'quantity', 'price', 'get_total']
-        read_only_fields = ['get_total']
+        exclude = ["user"]  # ✅ don't expose user info
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -273,24 +267,22 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            'id',
-            'user',
-            'shipping_address',
-            'items',
-            'total_amount',
-            'payment_reference',
-            'payment_status',
-            'transaction_date',
-            'created_at',
+            "id",
+            "user",
+            "shipping_address",
+            "items",
+            "total_amount",
+            "payment_reference",
+            "payment_status",
+            "transaction_date",
+            "created_at",
         ]
         read_only_fields = [
-            'payment_reference',
-            'payment_status',
-            'transaction_date',
-            'created_at',
-            'items',
-            'shipping_address',
+            "payment_reference",
+            "payment_status",
+            "transaction_date",
+            "created_at",
+            "items",
+            "shipping_address",
         ]
-    
-
 
