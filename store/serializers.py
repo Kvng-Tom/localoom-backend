@@ -158,55 +158,6 @@ class ProductSerializer(serializers.ModelSerializer):
             return location if location else "Unknown"
         return "Unknown"
 
-
-
-class OrderSerializer(serializers.ModelSerializer):
-    product = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(),
-        error_messages={
-            "required": "Product is required.",
-            "does_not_exist": "Selected product does not exist.",
-            "incorrect_type": "Invalid product type."
-        }
-    )
-    quantity = serializers.IntegerField(
-        min_value=1,
-        error_messages={
-            "invalid": "Enter a valid quantity.",
-            "min_value": "Quantity must be at least 1."
-        }
-    )
-    total_price = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        min_value=Decimal("0.01"),
-        error_messages={
-            "invalid": "Enter a valid total price.",
-            "min_value": "Total price must be greater than zero."
-        }
-    )
-    status = serializers.CharField(
-        error_messages={
-            "blank": "Order status cannot be empty."
-        }
-    )
-    buyer = serializers.PrimaryKeyRelatedField(read_only=True)
-    artisan = serializers.PrimaryKeyRelatedField(read_only=True)
-
-    class Meta:
-        model = Order
-        fields = [
-            "id",
-            "product",
-            "quantity",
-            "total_price",
-            "status",
-            "created_at",
-            "updated_at",
-            "buyer",
-            "artisan"
-        ]
-
 class StorefrontSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArtisanProfile
