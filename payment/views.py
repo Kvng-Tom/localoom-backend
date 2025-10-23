@@ -1,4 +1,6 @@
 # payments/views.py
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 import requests
 from django.conf import settings
 from rest_framework import generics, status
@@ -64,12 +66,26 @@ class InitializePaymentView(generics.GenericAPIView):
         }, status=status.HTTP_200_OK)
 
 
-# ---- Verify Paystack Payment ----
+
 # ---- Verify Paystack Payment ----
 class VerifyPaymentView(generics.GenericAPIView):
     serializer_class = VerifyPaymentSerializer  
     permission_classes = [IsAuthenticated]
 
+    # 🧩 This adds the query parameter documentation
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'reference',
+                openapi.IN_QUERY,
+                description="The Paystack payment reference returned after initialization",
+                type=openapi.TYPE_STRING,
+                required=True,
+            ),
+        ],
+        responses={200: "Payment verified successfully."}
+    )
+    
     def get(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
