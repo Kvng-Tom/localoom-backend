@@ -8,6 +8,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Payment
 from .serializers import VerifyPaymentSerializer, InitializePaymentSerializer
+import json
+import hashlib
+import hmac
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from rest_framework.views import APIView
 from store.models import Order
 from django.utils import timezone
 
@@ -85,7 +91,7 @@ class VerifyPaymentView(generics.GenericAPIView):
         ],
         responses={200: "Payment verified successfully."}
     )
-    
+
     def get(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
@@ -126,3 +132,54 @@ class VerifyPaymentView(generics.GenericAPIView):
             },
             status=200
         )
+    
+@method_decorator(csrf_exempt, name='dispatch')
+class PaystackWebhookView(APIView):
+    """
+    Handles Paystack webhook events (e.g., successful payments)
+    """
+
+    def post(self, request, *args, **kwargs):
+        # ✅ Verify Paystack signature
+        signature = request.headers.get("x-paystack-signature")
+        if not signature:
+            return Response({"error": "Missing Paystack signature"}, status=status.HTTP_400_BAD_REQUEST)
+
+        body = request.body if isinstance(request.body, bytes) else request.body.encode()
+        computed_signature = hmac.new(
+            settings.PAYSTACK_SECRET_KEY.encode('utf-8'),
+            body,
+            hashlib.sha512
+        ).hexdigest()
+
+        if not hmac.compare_digest(computed_signature, signature):
+            return Response({"error": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ✅ Parse the webhook payload
+        payload = json.loads(request.body)
+        event = payload.get("event")
+        data = payload.get("data", {})
+
+        if not event:
+            return Response({"error": "Missing event type"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if event == "charge.success":
+            reference = data.get("reference")
+
+            try:
+                payment = Payment.objects.get(reference=reference)
+            except Payment.DoesNotExist:
+                return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            if not payment.verified:
+                payment.verified = True
+                payment.save()
+
+                order = payment.order
+                order.payment_status = "paid"
+                order.transaction_date = timezone.now()
+                order.save()
+
+            return Response({"message": "Payment verified via webhook"}, status=status.HTTP_200_OK)
+
+        return Response({"message": "Unhandled event"}, status=status.HTTP_200_OK)
