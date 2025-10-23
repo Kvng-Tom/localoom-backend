@@ -1,4 +1,5 @@
 from django.urls import path
+from . import checkout_views
 from .views import (
     ProductImageUploadView,
     StorefrontListView,
@@ -68,5 +69,5 @@ urlpatterns = [
     path("cart/remove/", RemoveCartItemView.as_view(), name="remove-cart-item"), 
  
     path("cart/", FetchCartView.as_view(), name="fetch-cart"),  
-    path("cart/checkout/", CheckoutView.as_view(), name="checkout"),
+    path("cart/checkout/", checkout_views.CheckoutView.as_view(), name="checkout"),
 ]

@@ -413,17 +413,3 @@ class FetchCartView(generics.ListAPIView):
             "total": total
         }, status=status.HTTP_200_OK)
 
-class CheckoutView(generics.CreateAPIView):
-    serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        order = serializer.save()
-        return Response({
-            "message": "Order placed successfully!",
-            "order_id": order.id,
-            "total_amount": order.total_amount,
-            "payment_status": order.payment_status,
-        }, status=status.HTTP_201_CREATED)
