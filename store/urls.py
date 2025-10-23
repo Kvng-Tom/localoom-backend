@@ -23,7 +23,7 @@ from .views import (
     UpdateCartItemView,
     RemoveCartItemView,
     FetchCartView,
-    CheckoutView
+    
 )
 
 urlpatterns = [
