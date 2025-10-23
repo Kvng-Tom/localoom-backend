@@ -34,7 +34,7 @@ class CheckoutView(generics.CreateAPIView):
 
         # --- Create order ---
         order = Order.objects.create(
-            user=user,
+            user=request.user,
             shipping_address=shipping_address,
             total_amount=total_amount,
             payment_status="pending"
