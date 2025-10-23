@@ -175,7 +175,7 @@ class Order(models.Model):
         null=True,
         blank=True
     )
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     payment_reference = models.CharField(max_length=110, blank=True, null=True)
     payment_status = models.CharField(
