@@ -63,6 +63,7 @@ class InitializePaymentView(generics.GenericAPIView):
 
 # ---- Verify Paystack Payment ----
 class VerifyPaymentView(generics.GenericAPIView):
+    serializer_class = PaymentSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):

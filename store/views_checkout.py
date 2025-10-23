@@ -1,5 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
+from urllib3 import request
 from .models import Cart, Order, OrderItem, ShippingAddress
 from .serializers import OrderSerializer
 from decimal import Decimal
@@ -11,7 +12,9 @@ class CheckoutView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         print("CHECKOUT USER:", request.user, request.user.is_authenticated)
-
+        print("AUTH DEBUG:", request.auth)
+        print("USER OBJECT:", request.user, type(request.user))
+        print("IS AUTH:", request.user.is_authenticated)
         user = request.user
         shipping_data = request.data.get("shipping_address")
 
