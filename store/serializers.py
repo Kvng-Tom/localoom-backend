@@ -267,7 +267,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
-    shipping_address = ShippingAddressSerializer()
+    shipping_address = ShippingAddressSerializer(read_only=True)
     user = serializers.StringRelatedField(read_only=True)
 
     class Meta:
@@ -284,31 +284,13 @@ class OrderSerializer(serializers.ModelSerializer):
             'created_at',
         ]
         read_only_fields = [
-            'items',
-            'total_amount',
             'payment_reference',
             'payment_status',
             'transaction_date',
-            'created_at'
+            'created_at',
+            'items',
+            'shipping_address',
         ]
-        
-    def create(self, validated_data):
-        items_data = validated_data.pop('items')
-        shipping_data = validated_data.pop('shipping_address')
-
-        user = self.context['request'].user
-        shipping_address = ShippingAddress.objects.create(user=user, **shipping_data)
-
-        order = Order.objects.create(
-            user=user,
-            shipping_address=shipping_address,
-            total_amount=validated_data['total_amount']
-        )
-
-        for item_data in items_data:
-            OrderItem.objects.create(order=order, **item_data)
-
-        return order
     
 
 
