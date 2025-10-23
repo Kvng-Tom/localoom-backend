@@ -10,6 +10,8 @@ class CheckoutView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
+        print("CHECKOUT USER:", request.user, request.user.is_authenticated)
+
         user = request.user
         shipping_data = request.data.get("shipping_address")
 
