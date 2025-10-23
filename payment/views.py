@@ -1,3 +1,4 @@
+# payments/views.py
 import requests
 from django.conf import settings
 from rest_framework import generics, status
@@ -8,13 +9,14 @@ from .serializers import PaymentSerializer
 from store.models import Order
 from django.utils import timezone
 
-# ---- Initialize Paystack payment ----
+
 class InitializePaymentView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PaymentSerializer
 
     def post(self, request, *args, **kwargs):
-        order_id = request.data.get('order_id')
+        # ✅ Only required input: order_id
+        order_id = request.data.get("order_id")
         if not order_id:
             return Response({"error": "Order ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -23,26 +25,26 @@ class InitializePaymentView(generics.GenericAPIView):
         except Order.DoesNotExist:
             return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Initialize payment on Paystack
+        # ✅ Prepare Paystack request
         headers = {
             "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
             "Content-Type": "application/json"
         }
         data = {
             "email": request.user.email,
-            "amount": int(order.total_amount * 100),  # Convert to kobo
-            "callback_url": "http://localhost:8000/api/payment/verify/",
+            "amount": int(order.total_amount * 100),  # Convert Naira → Kobo
+            "callback_url": "http://localhost:8000/api/payment/verify/"
         }
 
         response = requests.post(f"{settings.PAYSTACK_BASE_URL}/transaction/initialize", json=data, headers=headers)
         res_data = response.json()
 
-        if response.status_code != 200:
+        if response.status_code != 200 or not res_data.get("status"):
             return Response({"error": res_data.get("message", "Payment initialization failed.")}, status=400)
 
-        reference = res_data['data']['reference']
+        reference = res_data["data"]["reference"]
 
-        # Save Payment record
+        # ✅ Save Payment record in DB
         Payment.objects.create(
             user=request.user,
             order=order,
@@ -50,13 +52,14 @@ class InitializePaymentView(generics.GenericAPIView):
             reference=reference
         )
 
-        # Store reference in Order for easy linking
+        # ✅ Store reference in order for linkage
         order.payment_reference = reference
         order.save()
 
         return Response({
-            "authorization_url": res_data['data']['authorization_url'],
-            "access_code": res_data['data']['access_code'],
+            "message": "Payment initialized successfully.",
+            "authorization_url": res_data["data"]["authorization_url"],
+            "access_code": res_data["data"]["access_code"],
             "reference": reference
         }, status=status.HTTP_200_OK)
 
