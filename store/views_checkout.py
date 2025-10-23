@@ -1,12 +1,13 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, status
 from rest_framework.response import Response
 from .models import Cart, Order, OrderItem, ShippingAddress
 from .serializers import OrderSerializer
 from decimal import Decimal
+from rest_framework.permissions import IsAuthenticated
 
 class CheckoutView(generics.CreateAPIView):
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -36,6 +37,8 @@ class CheckoutView(generics.CreateAPIView):
                 shipping_address = ShippingAddress.objects.get(id=shipping_data, user=user)
             except ShippingAddress.DoesNotExist:
                 return Response({"error": "Invalid shipping address ID."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        print("AUTH CHECK:", request.user, request.user.is_authenticated, request.user.id)
 
         # ✅ Create order with proper total_amount
         order = Order.objects.create(
