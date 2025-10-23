@@ -9,5 +9,9 @@ class PaymentSerializer(serializers.ModelSerializer):
             "user", "amount", "reference", "verified", "created_at", "order"
         ]
 
+class VerifyPaymentSerializer(serializers.Serializer):
+    reference = serializers.CharField(required=True)
+
 class InitializePaymentSerializer(serializers.Serializer):
     order_id = serializers.IntegerField(required=True)
+

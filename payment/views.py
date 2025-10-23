@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Payment
-from .serializers import PaymentSerializer, InitializePaymentSerializer
+from .serializers import VerifyPaymentSerializer, InitializePaymentSerializer
 from store.models import Order
 from django.utils import timezone
 
@@ -65,23 +65,27 @@ class InitializePaymentView(generics.GenericAPIView):
 
 
 # ---- Verify Paystack Payment ----
+# ---- Verify Paystack Payment ----
 class VerifyPaymentView(generics.GenericAPIView):
-    serializer_class = PaymentSerializer
+    serializer_class = VerifyPaymentSerializer  
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        reference = request.query_params.get('reference')
-        if not reference:
-            return Response({"error": "Reference is required."}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        reference = serializer.validated_data["reference"]
 
         headers = {
             "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}"
         }
-        response = requests.get(f"{settings.PAYSTACK_BASE_URL}/transaction/verify/{reference}", headers=headers)
+        response = requests.get(
+            f"{settings.PAYSTACK_BASE_URL}/transaction/verify/{reference}",
+            headers=headers
+        )
         res_data = response.json()
 
-        if response.status_code != 200 or res_data['data']['status'] != 'success':
-            return Response({"error": "Payment verification failed."}, status=status.HTTP_400_BAD_REQUEST)
+        if response.status_code != 200 or res_data["data"]["status"] != "success":
+            return Response({"error": "Payment verification failed."}, status=400)
 
         # Mark payment as verified
         try:
@@ -89,13 +93,20 @@ class VerifyPaymentView(generics.GenericAPIView):
             payment.verified = True
             payment.save()
 
-            # Update order status
             order = payment.order
-            order.payment_status = 'paid'
+            order.payment_status = "paid"
             order.transaction_date = timezone.now()
             order.save()
-
         except Payment.DoesNotExist:
-            return Response({"error": "Payment record not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Payment record not found."}, status=404)
 
-        return Response({"message": "Payment verified successfully."}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "message": "Payment verified successfully.",
+                "order_id": order.id,
+                "amount": str(payment.amount),
+                "reference": reference,
+                "status": "paid"
+            },
+            status=200
+        )
