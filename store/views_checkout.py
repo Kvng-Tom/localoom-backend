@@ -1,7 +1,8 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, serializers
 from rest_framework.response import Response
-from .models import Order, OrderItem, Cart, ShippingAddress
+from .models import Cart, Order, OrderItem, ShippingAddress
 from .serializers import OrderSerializer
+
 
 class CheckoutView(generics.CreateAPIView):
     serializer_class = OrderSerializer
@@ -14,15 +15,15 @@ class CheckoutView(generics.CreateAPIView):
         if not shipping_data:
             return Response({"error": "Shipping address is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get user's cart
+        # --- Get user's cart ---
         cart_items = Cart.objects.filter(user=user)
         if not cart_items.exists():
             return Response({"error": "Your cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Calculate total
+        # ---Calculate total ---
         total_amount = sum(item.product.price * item.quantity for item in cart_items)
 
-        # Create shipping address (if provided as data)
+        # --- 3️⃣ Handle shipping address ---
         if isinstance(shipping_data, dict):
             shipping_address = ShippingAddress.objects.create(user=user, **shipping_data)
         else:
@@ -31,15 +32,15 @@ class CheckoutView(generics.CreateAPIView):
             except ShippingAddress.DoesNotExist:
                 return Response({"error": "Invalid shipping address ID."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create order
+        # --- Create order ---
         order = Order.objects.create(
             user=user,
             shipping_address=shipping_address,
             total_amount=total_amount,
-            payment_status='pending'
+            payment_status="pending"
         )
 
-        # Move cart items into order items
+        # ---  Move cart items into order items ---
         for item in cart_items:
             OrderItem.objects.create(
                 order=order,
@@ -48,9 +49,10 @@ class CheckoutView(generics.CreateAPIView):
                 price=item.product.price
             )
 
-        # Clear the cart
+        # --- Clear the cart ---
         cart_items.delete()
 
+        # --- Serialize and respond ---
         serializer = self.get_serializer(order)
         return Response({
             "message": "Order placed successfully.",
