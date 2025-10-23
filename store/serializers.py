@@ -256,7 +256,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class ShippingAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingAddress
-        exclude = ["user"]  # ✅ don't expose user info
+        exclude = ["user"]  
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -278,6 +278,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = [
+            "total_amount",
             "payment_reference",
             "payment_status",
             "transaction_date",
