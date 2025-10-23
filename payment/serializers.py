@@ -8,3 +8,6 @@ class PaymentSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "user", "amount", "reference", "verified", "created_at", "order"
         ]
+
+class InitializePaymentSerializer(serializers.Serializer):
+    order_id = serializers.IntegerField(required=True)

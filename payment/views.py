@@ -5,14 +5,14 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Payment
-from .serializers import PaymentSerializer
+from .serializers import PaymentSerializer, InitializePaymentSerializer
 from store.models import Order
 from django.utils import timezone
 
 
 class InitializePaymentView(generics.GenericAPIView):
+    serializer_class = InitializePaymentSerializer
     permission_classes = [IsAuthenticated]
-    serializer_class = PaymentSerializer
 
     def post(self, request, *args, **kwargs):
         # ✅ Only required input: order_id
