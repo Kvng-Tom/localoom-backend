@@ -8,7 +8,7 @@ class UserManager(BaseUserManager):
 
     def create_user(self, email=None, phone_number=None, password=None, **extra_fields):
         if not email and not phone_number:
-            raise ValueError("The user must have either an email or phone number")
+            raise ValueError("Please enter either an email address or a phone number.")
 
         if email:
             email = self.normalize_email(email)
@@ -21,7 +21,7 @@ class UserManager(BaseUserManager):
                 validate_password(password)
                 user.set_password(password)
             except ValidationError as e:
-                raise ValueError(f"Password validation error: {e}")
+                raise ValueError("Password too weak. It must be at least 8 characters.")
         else:
             user.set_unusable_password()
 

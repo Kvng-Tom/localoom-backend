@@ -36,33 +36,41 @@ class UserRegistrationView(APIView):
     def post(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save(is_active=False)  # inactive until OTP verified
+            try:
+                user = serializer.save(is_active=False)  # inactive until OTP verified
 
-            # Generate OTP
-            otp_code = generate_otp()
-            OTP.objects.create(
-                otp=otp_code,
-                user=user,
-                purpose="signup",
-                expiry_date=timezone.now() + timedelta(minutes=10),
-            )
+                # Generate OTP
+                otp_code = generate_otp()
+                OTP.objects.create(
+                    otp=otp_code,
+                    user=user,
+                    purpose="signup",
+                    expiry_date=timezone.now() + timedelta(minutes=10),
+                )
 
-            # Send OTP via preferred method
-            results = send_user_otp(user, otp_code, purpose="signup")
+                # Send OTP via preferred method
+                results = send_user_otp(user, otp_code, purpose="signup")
 
-            # Log the registration attempt and OTP sending
-            contact_method = "email" if results.get("email") else "phone"
-            logger.info(
-                "New user registration: %s (role=%s), OTP sent via %s",
-                user.email or user.phone_number,
-                user.role,
-                contact_method,
-            )
+                # Log the registration attempt and OTP sending
+                contact_method = "email" if results.get("email") else "phone"
+                logger.info(
+                    "New user registration: %s (role=%s), OTP sent via %s",
+                    user.email or user.phone_number,
+                    user.role,
+                    contact_method,
+                )
 
-            message = f"Registration successful! OTP sent via {contact_method}."
-            return Response({"message": message}, status=status.HTTP_201_CREATED)
+                message = f"Registration successful! OTP sent via {contact_method}."
+                return Response({"message": message}, status=status.HTTP_201_CREATED)
 
-        # Log failed registration attempt
+            except ValueError as e:
+                # Catch weak password or missing email/phone errors from UserManager
+                return Response(
+                    {"message": str(e)}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Log failed registration attempt (serializer-level validation)
         logger.warning("User registration failed: %s", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -77,7 +85,7 @@ class LoginView(APIView):
 
         user = get_user_by_identifier(identifier)
         if not user or not user.check_password(password):
-            return Response({"error": "Invalid credentials"}, status=401)
+            return Response({"error": "Incorrect email or password. Please try again."}, status=401)
 
         if not user.is_active:
             return Response({"error": "Account not verified. Verify via OTP."}, status=403)
@@ -115,7 +123,7 @@ class ForgotPasswordView(APIView):
 
         user = get_user_by_identifier(identifier)
         if not user:
-            return Response({"error": "User not found."}, status=404)
+            return Response({"error": "We couldn’t find any account with that email or phone number."}, status=404)
 
         # Delete old forgot-password OTPs
         OTP.objects.filter(user=user, purpose="forgot-password").delete()
@@ -157,7 +165,7 @@ class ResetPasswordView(APIView):
                 expiry_date__gt=timezone.now(),
             )
         except OTP.DoesNotExist:
-            return Response({"error": "Invalid or expired OTP."}, status=400)
+            return Response({"error": "That OTP is incorrect or has expired. Please request a new one."}, status=400)
 
         # Check if blocked
         if otp_entry.blocked_until and timezone.now() < otp_entry.blocked_until:
