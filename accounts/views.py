@@ -18,7 +18,7 @@ from .serializers import (
     ResendOTPSerializer
 )
 from .utils import generate_otp, send_email_via_useplunk, send_user_otp, get_user_by_identifier
-
+from allauth.socialaccount.models import SocialAccount
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -97,6 +97,29 @@ class LoginView(APIView):
             "refresh": str(refresh),
         }, status=200)
 
+class GoogleLoginCallbackView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({'error': 'Email not provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Issue JWT tokens
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+            'user': {
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role
+            }
+        })
+    
 
 class ProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]

@@ -65,7 +65,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # 'django.contrib.sites',
+    'django.contrib.sites',
 
     # Cloudinary
     'cloudinary',
@@ -252,7 +252,7 @@ REST_FRAMEWORK = {
 
 AUTH_USER_MODEL = 'accounts.User'
 
-# SITE_ID = int(os.environ.get("SITE_ID", 1)) 
+SITE_ID = 1
 
 TERMII_API_KEY = os.getenv("TERMIi_API_KEY")
 TERMII_BASE_URL = os.getenv("TERMIi_BASE_URL")
@@ -339,3 +339,17 @@ LOGGING = {
 PAYSTACK_PUBLIC_KEY = os.getenv("PAYSTACK_PUBLIC_KEY")
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
 PAYSTACK_BASE_URL = os.getenv("PAYSTACK_BASE_URL")
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_SECRET'),
+            'key': ''
+        }
+    }
+}
