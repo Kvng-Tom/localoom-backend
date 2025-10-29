@@ -121,6 +121,60 @@ MIDDLEWARE = [
     'allauth.account.middleware.AccountMiddleware',
 ]
 
+#--- Allauth / Authentication Settings ---  
+
+AUTH_USER_MODEL = 'accounts.User'
+
+# Django Allauth core
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+
+#--- Login/Logout Redirects ---
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+
+#--- Custom Authentication Backends ---
+AUTHENTICATION_BACKENDS = [
+    "accounts.backends.CustomAuthBackend",
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend", 
+]
+
+# --- Django Allauth Configuration ---
+ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
+ACCOUNT_EMAIL_VERIFICATION = "none"    
+ACCOUNT_CONFIRM_EMAIL_ON_GET = False
+
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"  
+
+#--- provider configurations ---
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_SECRET'),
+            'key': ''
+        }
+    }
+}
+
+
+#--- Site ID for django sites framework ---
+SITE_ID = 1
+
+TERMII_API_KEY = os.getenv("TERMIi_API_KEY")
+TERMII_BASE_URL = os.getenv("TERMIi_BASE_URL")
+
+# Django Allauth configuration for custom user without username
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 # [
@@ -156,6 +210,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'localloom.wsgi.application'
+
 
 
 # Database
@@ -250,25 +305,7 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "accounts.utils.custom_exception_handler",
 }
 
-AUTH_USER_MODEL = 'accounts.User'
 
-SITE_ID = 1
-
-TERMII_API_KEY = os.getenv("TERMIi_API_KEY")
-TERMII_BASE_URL = os.getenv("TERMIi_BASE_URL")
-
-AUTHENTICATION_BACKENDS = [
-    "accounts.backends.CustomAuthBackend",
-    "django.contrib.auth.backends.ModelBackend",
-    "allauth.account.auth_backends.AuthenticationBackend", 
-]
-
-# Django Allauth configuration for custom user without username
-ACCOUNT_LOGIN_METHODS = {'email'}
-ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
-
-LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
@@ -340,16 +377,5 @@ PAYSTACK_PUBLIC_KEY = os.getenv("PAYSTACK_PUBLIC_KEY")
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
 PAYSTACK_BASE_URL = os.getenv("PAYSTACK_BASE_URL")
 
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'APP': {
-            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
-            'secret': os.getenv('GOOGLE_SECRET'),
-            'key': ''
-        }
-    }
-}
+
+
