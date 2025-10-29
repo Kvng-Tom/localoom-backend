@@ -20,7 +20,7 @@ urlpatterns = [
     path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
     path('verify-otp/', OTPVerifyView.as_view(), name='verify-otp'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    path('google/callback/', GoogleLoginCallbackView.as_view(), name='google-callback'),
+    #path('google/callback/', GoogleLoginCallbackView.as_view(), name='google-callback'),
     path('resend-signup-otp/', ResendSignupOTPView.as_view(), name='resend-signup-otp'),
     path('resend-forgot-password-otp/', ResendForgotPasswordOTPView.as_view(), name='resend-forgot-password-otp'),
 ]

@@ -97,7 +97,7 @@ class LoginView(APIView):
             "refresh": str(refresh),
         }, status=200)
 
-class GoogleLoginCallbackView(APIView):
+#class GoogleLoginCallbackView(APIView):
     def post(self, request):
         email = request.data.get('email')
         if not email:

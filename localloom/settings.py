@@ -132,8 +132,8 @@ ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 
 #--- Login/Logout Redirects ---
-LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "https://local-loom.vercel.app/"
+LOGOUT_REDIRECT_URL = "https://local-loom.vercel.app/"
 
 #--- Custom Authentication Backends ---
 AUTHENTICATION_BACKENDS = [
