@@ -4,10 +4,11 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
-
 from .models import OTP
 from .utils import generate_otp, send_user_otp
-
+from django.contrib.auth.signals import user_logged_in
+from django.dispatch import receiver
+from store.utils import merge_guest_cart  # import the function
 User = get_user_model()
 
 
@@ -40,3 +41,10 @@ def cleanup_user_related(sender, instance, **kwargs):
     outstanding_tokens = OutstandingToken.objects.filter(user=instance)
     BlacklistedToken.objects.filter(token__in=outstanding_tokens).delete()
     outstanding_tokens.delete()
+
+@receiver(user_logged_in)
+def handle_user_logged_in(sender, request, user, **kwargs):
+    """
+    Automatically merge the guest cart with the user's cart after login.
+    """
+    merge_guest_cart(request)

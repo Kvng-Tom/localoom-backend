@@ -189,8 +189,8 @@ class MinimalProductSerializer(serializers.ModelSerializer):
 class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
-        fields = ['id', 'product', 'quantity', 'created_at']
-
+        fields = ['id', 'product', 'quantity', 'created_at', 'session_key']
+        read_only_fields = ['session_key', 'created_at']
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source="product.name", read_only=True)

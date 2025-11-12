@@ -136,8 +136,11 @@ class Cart(models.Model):
     user = models.ForeignKey(
         get_user_model(),
         on_delete=models.CASCADE,
-        related_name="cart_items"
+        related_name="cart_items",
+        null=True,
+        blank=True  
     )
+    session_key = models.CharField(max_length=40, null=True, blank=True)
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
@@ -149,10 +152,16 @@ class Cart(models.Model):
     class Meta:
         verbose_name = "Cart"
         verbose_name_plural = "Carts"
-        unique_together = ('user', 'product')
+        unique_together = ('user', 'session_key', 'product')
+
+    def save(self, *args, **kwargs):
+        if not self.user and not self.session_key:
+            raise ValueError("Cart item must be linked to a user or session.")
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.quantity} x {self.product.name} for {self.user}"
+        identifier = self.user or self.session_key
+        return f"{self.quantity} x {self.product.name} ({identifier})"
 
 class ShippingAddress(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

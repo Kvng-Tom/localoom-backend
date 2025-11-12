@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -293,51 +293,68 @@ class ProductDetailView(generics.RetrieveAPIView):
 # --- Add to Cart View ---
 class AddToCartView(generics.CreateAPIView):
     serializer_class = CartSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
-        user = request.user
+        user = request.user if request.user.is_authenticated else None
         product_id = request.data.get("product")
-        quantity = request.data.get("quantity", 1)
+        quantity = int(request.data.get("quantity", 1))
+
+        # Ensure session exists
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
 
         try:
             product = Product.objects.get(id=product_id, is_active=True)
         except Product.DoesNotExist:
             return Response({"error": "Product not found or inactive."}, status=status.HTTP_404_NOT_FOUND)
 
-        if product.stock_quantity < int(quantity):
+        if product.stock_quantity < quantity:
             return Response({"error": "Insufficient stock."}, status=status.HTTP_400_BAD_REQUEST)
 
-        cart_item, created = Cart.objects.get_or_create(user=user, product=product)
+        cart_item, created = Cart.objects.get_or_create(
+            user=user,
+            session_key=None if user else session_key,
+            product=product,
+            defaults={"quantity": quantity}
+        )
+
         if not created:
-            cart_item.quantity += int(quantity)
-            cart_item.save()
-        else:
-            cart_item.quantity = int(quantity)
+            cart_item.quantity += quantity
             cart_item.save()
 
         return Response({"message": "Item added to cart successfully."}, status=status.HTTP_201_CREATED)
 
+
 class UpdateCartItemView(generics.UpdateAPIView):
     serializer_class = CartSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     queryset = Cart.objects.all()
-    lookup_field = "product_id"  # Updated lookup field
 
     def patch(self, request, *args, **kwargs):
-        user = request.user
+        user = request.user if request.user.is_authenticated else None
         product_id = request.data.get("product")
         quantity = request.data.get("quantity")
 
+        # Get the right cart scope
+        session_key = request.session.session_key or request.session.create()
+        filter_kwargs = {"product_id": product_id}
+        if user:
+            filter_kwargs["user"] = user
+        else:
+            filter_kwargs["session_key"] = session_key
+
         try:
-            cart_item = Cart.objects.get(user=user, product_id=product_id)
+            cart_item = Cart.objects.get(**filter_kwargs)
         except Cart.DoesNotExist:
             return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
 
         if quantity:
-            if cart_item.product.stock_quantity < int(quantity):
+            quantity = int(quantity)
+            if cart_item.product.stock_quantity < quantity:
                 return Response({"error": "Insufficient stock."}, status=status.HTTP_400_BAD_REQUEST)
-            cart_item.quantity = int(quantity)
+            cart_item.quantity = quantity
             cart_item.save()
 
         return Response({"message": "Cart item updated successfully."}, status=status.HTTP_200_OK)
@@ -345,8 +362,8 @@ class UpdateCartItemView(generics.UpdateAPIView):
 
 class RemoveCartItemView(generics.DestroyAPIView):
     serializer_class = CartSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    queryset = Cart.objects.all()  # Added queryset to ensure proper handling
+    permission_classes = [permissions.AllowAny]
+    queryset = Cart.objects.all()
 
     @swagger_auto_schema(
         operation_description="Remove a product from the cart",
@@ -363,26 +380,39 @@ class RemoveCartItemView(generics.DestroyAPIView):
         responses={200: "Cart item removed successfully."},
     )
     def delete(self, request, *args, **kwargs):
-        user = request.user
+        user = request.user if request.user.is_authenticated else None
         product_id = request.data.get("product")
 
         if not product_id:
             return Response({"error": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        session_key = request.session.session_key or request.session.create()
+        filter_kwargs = {"product_id": product_id}
+        if user:
+            filter_kwargs["user"] = user
+        else:
+            filter_kwargs["session_key"] = session_key
+
         try:
-            cart_item = Cart.objects.get(user=user, product_id=product_id)
+            cart_item = Cart.objects.get(**filter_kwargs)
         except Cart.DoesNotExist:
             return Response({"error": "Cart item not found."}, status=status.HTTP_404_NOT_FOUND)
 
         cart_item.delete()
         return Response({"message": "Cart item removed successfully."}, status=status.HTTP_200_OK)
-
 class FetchCartView(generics.ListAPIView):
     serializer_class = CartSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
-        return Cart.objects.filter(user=self.request.user)
+        user = self.request.user
+        if user.is_authenticated:
+            return Cart.objects.filter(user=user)
+        else:
+            session_key = self.request.session.session_key
+            if not session_key:
+                return Cart.objects.none()
+            return Cart.objects.filter(session_key=session_key)
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -391,8 +421,10 @@ class FetchCartView(generics.ListAPIView):
 
         for item in queryset:
             product = item.product
-            # Get the first image from the related images field
-            first_image = ProductImageSerializer(product.images.first()).data["image"] if product.images.exists() else None
+            first_image = (
+                ProductImageSerializer(product.images.first()).data["image"]
+                if product.images.exists() else None
+            )
             subtotal = item.quantity * product.price
             total += subtotal
 
@@ -412,4 +444,3 @@ class FetchCartView(generics.ListAPIView):
             "cart_items": cart_items,
             "total": total
         }, status=status.HTTP_200_OK)
-

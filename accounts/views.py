@@ -24,6 +24,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from drf_yasg import openapi
+from django.contrib.auth import login
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -89,6 +90,10 @@ class LoginView(APIView):
 
         if not user.is_active:
             return Response({"error": "Account not verified. Verify via OTP."}, status=403)
+    
+        login(request, user)  # Log the user in
+
+        # Generate JWT tokens
 
         refresh = RefreshToken.for_user(user)
         return Response({
