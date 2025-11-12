@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from rest_framework.views import exception_handler
-from .models import Cart
+
 
 logger = logging.getLogger(__name__)
 
