@@ -81,12 +81,10 @@ class ProductUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     lookup_field = "slug"
 
-# --List Products for a specific Artisan --
-
 class ProductPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "limit"
-    max_page_size = 100
+    page_size = 12  # Default number of items per page
+    page_size_query_param = "limit"  # Allow clients to specify page size
+    max_page_size = 100  # Maximum number of items per page
 
 class ProductSearchListView(generics.ListAPIView):
     serializer_class = ProductSerializer
@@ -178,10 +176,7 @@ class ProductImageUploadView(generics.CreateAPIView):
         serializer.save(product=product)
 
 # --- Pagination for Product List ---
-class ProductPagination(PageNumberPagination):
-    page_size = 10  # Default number of items per page
-    page_size_query_param = "limit"  # Allow clients to specify page size
-    max_page_size = 100  # Maximum number of items per page
+
 
 # --- List All Products with Pagination ---
 class ProductListView(generics.ListAPIView):
@@ -400,6 +395,7 @@ class RemoveCartItemView(generics.DestroyAPIView):
 
         cart_item.delete()
         return Response({"message": "Cart item removed successfully."}, status=status.HTTP_200_OK)
+        
 class FetchCartView(generics.ListAPIView):
     serializer_class = CartSerializer
     permission_classes = [permissions.AllowAny]

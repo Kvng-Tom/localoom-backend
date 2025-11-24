@@ -175,13 +175,13 @@ TERMII_BASE_URL = os.getenv("TERMIi_BASE_URL")
 ACCOUNT_LOGIN_METHODS = {'email'}
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 
-CORS_ALLOW_ALL_ORIGINS = True
 
-# [
-#     "http://localhost:3000",
-#     "https://local-loom.vercel.app",
-# ]
+CORS_ALLOW_CREDENTIALS = True
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://local-loom.vercel.app",  
+]
 CORS_ALLOW_METHODS = [
     "GET",
     "POST",
@@ -190,7 +190,6 @@ CORS_ALLOW_METHODS = [
     "DELETE",
     "OPTIONS"
 ]
-
 
 ROOT_URLCONF = 'localloom.urls'
 
